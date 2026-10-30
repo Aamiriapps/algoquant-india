@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlgoQuant India | Nifty 500 NSE Companies - Daily & Intraday Algo Trading Suite</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=3.5">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo-group">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-chart-line-up"></i>
+                </div>
+                <div>
+                    <div class="brand-title">
+                        <span class="gradient-text">ALGOQUANT</span> INDIA
+                        <span class="market-badge" id="market-status-indicator"><span class="pulse-dot"></span> NSE LIVE</span>
+                    </div>
+                    <div class="brand-subtitle" id="header-strategy-subtitle">Daily 50 EMA & Intraday 200 EMA + Supertrend + ADX + MACD [Pro v2]</div>
+                </div>
+            </div>
+
+            <!-- Live Benchmark Indices -->
+            <div class="header-indices" id="header-indices">
+                <div class="index-pill" title="NIFTY 50 Index">
+                    <span class="index-name">NIFTY 50</span>
+                    <span class="index-price" id="nifty-price">--</span>
+                    <span class="index-chg pill-badge" id="nifty-change">--</span>
+                </div>
+                <div class="index-pill" title="India VIX Volatility Index">
+                    <span class="index-name">INDIA VIX</span>
+                    <span class="index-price" id="vix-price">--</span>
+                    <span class="index-chg pill-badge" id="vix-change">--</span>
+                </div>
+            </div>
+
+            <!-- PRIMARY SECTION SWITCHER -->
+            <div class="primary-section-nav">
+                <button class="nav-section-btn active" data-mode="daily" id="btn-mode-daily">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <div>
+                        <div class="nav-btn-title">Daily Swing Strategy</div>
+                        <div class="nav-btn-desc">50 EMA + Supertrend (Daily Swing Triggers)</div>
+                    </div>
+                </button>
+
+                <button class="nav-section-btn" data-mode="intraday" id="btn-mode-intraday">
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                    <div>
+                        <div class="nav-btn-title">Intraday Strategy</div>
+                        <div class="nav-btn-desc">200 EMA + Supertrend (15m Candles)</div>
+                    </div>
+                </button>
+
+                <button class="nav-section-btn" data-mode="portfolio" id="btn-mode-portfolio">
+                    <i class="fa-solid fa-crosshairs"></i>
+                    <div>
+                        <div class="nav-btn-title">Pro Swing Portfolio</div>
+                        <div class="nav-btn-desc">Custom Stocks &bull; Buy/Exit Signals &bull; P&L</div>
+                    </div>
+                </button>
+            </div>
+
+            <div class="header-actions">
+                <button id="btn-refresh-universe" class="btn btn-secondary" title="Auto-discover hot momentum stocks across NSE without hardcoded lists">
+                    <i class="fa-solid fa-arrows-rotate text-cyan"></i> <span id="btn-universe-text">Auto-Refresh Momentum</span>
+                </button>
+                <button id="btn-export-csv" class="btn btn-secondary">
+                    <i class="fa-solid fa-file-arrow-down"></i> Export CSV
+                </button>
+                <button id="btn-refresh-scan" class="btn btn-primary">
+                    <i class="fa-solid fa-rotate"></i> Refresh Scan
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- SCREENER VIEW (DAILY & INTRADAY) -->
+        <div id="screener-view">
+            <!-- Strategy Description Banner -->
+            <section class="strategy-banner" id="strategy-banner">
+            <div class="banner-grid">
+                <div class="banner-item">
+                    <span class="banner-label">Active Mode:</span>
+                    <span class="banner-val highlight-cyan" id="banner-mode-val">Daily Swing Strategy [BUY ONLY]</span>
+                </div>
+                <div class="banner-item">
+                    <span class="banner-label">Trading Strategy:</span>
+                    <span class="banner-val highlight-green">NSE Cash Delivery &bull; Long Only &bull; Zero Short Risk</span>
+                </div>
+                <div class="banner-item">
+                    <span class="banner-label">Dynamic Universe:</span>
+                    <span class="banner-val" id="banner-universe-val">Dynamic NSE Universe (No Hardcoded Lists)</span>
+                </div>
+                <div class="banner-item">
+                    <span class="banner-label">Pro Accuracy:</span>
+                    <span class="banner-val highlight-gold">7-Filter Institutional Confidence System (Score 7/7)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI Metrics Grid -->
+        <section class="kpi-grid">
+            <div class="kpi-card" id="kpi-total-card">
+                <div class="kpi-icon icon-blue"><i class="fa-solid fa-building-columns"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Universe Monitored</div>
+                    <div class="kpi-value" id="kpi-total-scanned">--</div>
+                    <div class="kpi-sub">Nifty 500 Universe</div>
+                </div>
+            </div>
+
+            <div class="kpi-card" id="kpi-triggers-card">
+                <div class="kpi-icon icon-purple"><i class="fa-solid fa-bolt"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label" id="kpi-triggers-label">Swing Crossovers</div>
+                    <div class="kpi-value" id="kpi-total-triggers">--</div>
+                    <div class="kpi-sub" id="kpi-triggers-sub">Fresh triggers found</div>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-highlight" id="kpi-actionable-card">
+                <div class="kpi-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Actionable Entries (Now)</div>
+                    <div class="kpi-value text-green" id="kpi-actionable-count">--</div>
+                    <div class="kpi-sub">Ready to enter within safe risk</div>
+                </div>
+            </div>
+
+            <div class="kpi-card" id="kpi-unsuitable-card">
+                <div class="kpi-icon icon-amber"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Not Suitable / Avoid</div>
+                    <div class="kpi-value text-amber" id="kpi-unsuitable-count">--</div>
+                    <div class="kpi-sub">Overextended / Invalidated</div>
+                </div>
+            </div>
+
+            <div class="kpi-card" id="kpi-pro-card">
+                <div class="kpi-icon icon-gold"><i class="fa-solid fa-gem"></i></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Enhanced Pro Setups</div>
+                    <div class="kpi-value text-gold" id="kpi-pro-count">--</div>
+                    <div class="kpi-sub">Volume Spike + Trend Aligned</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Strategy Tabs & Filters Bar -->
+        <section class="controls-panel">
+            <div class="strategy-tabs">
+                <button class="strategy-tab active" data-tab="core">
+                    <i class="fa-solid fa-sliders"></i> <span id="tab-core-label">Core Setup (50 EMA + Supertrend 10,3)</span>
+                </button>
+                <button class="strategy-tab" data-tab="enhanced">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Enhanced Pro Algo (Volume Breakout + Alignment)
+                </button>
+            </div>
+
+            <div class="filters-row">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="input-search" placeholder="Search Nifty 500 (e.g. RELIANCE, ADANI, TATA, HDFC, HAL)...">
+                </div>
+
+                <div class="filter-pills" id="filter-pills-container">
+                    <button class="pill active" data-filter="all">All Setups</button>
+                    <button class="pill pill-actionable" data-filter="actionable">
+                        <i class="fa-solid fa-circle-check text-green"></i> Actionable (Ready Now)
+                    </button>
+                    <button class="pill pill-unsuitable" data-filter="not_suitable">
+                        <i class="fa-solid fa-shield-halved"></i> Not Suitable / Wait
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pro Strategy Explanation Callout (Shown when Enhanced tab is active) -->
+        <div id="enhanced-explainer" class="pro-explainer-card hidden">
+            <div class="pro-explainer-header">
+                <div class="pro-badge"><i class="fa-solid fa-crown"></i> QUANTITATIVE PRO ENHANCEMENT SUITE</div>
+                <div class="pro-subtitle" id="pro-explainer-sub">Institutional rules applied to Nifty 500 companies to avoid false whipsaws</div>
+            </div>
+            <div class="pro-grid">
+                <div class="pro-col">
+                    <div class="col-title"><i class="fa-solid fa-compass"></i> Trend Structure</div>
+                    <p id="pro-col-trend-desc">Ensures price and moving averages are in secular alignment. Never buy counter-trend traps.</p>
+                </div>
+                <div class="pro-col">
+                    <div class="col-title"><i class="fa-solid fa-chart-column"></i> Volume Expansion Filter</div>
+                    <p>Trigger volume must exceed 20-period Volume SMA. Confirms institutional accumulation over retail noise.</p>
+                </div>
+                <div class="pro-col">
+                    <div class="col-title"><i class="fa-solid fa-gauge-high"></i> RSI Momentum Corridor</div>
+                    <p>RSI between 42 and 68. Prevents buying at overbought exhaustion while ensuring momentum has room to run.</p>
+                </div>
+                <div class="pro-col">
+                    <div class="col-title"><i class="fa-solid fa-shield-halved"></i> Strict Risk / Reward</div>
+                    <p>Pre-calculated Stop-Loss at Supertrend/EMA, Target 1 (1:1.5 RR - book 50% & trail), Target 2 (1:2.5 RR runner).</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signals Table Section -->
+        <section class="signals-section">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title" id="signals-table-heading">NSE Nifty 500 (Daily Timeframe)</h2>
+                    <p class="section-desc" id="signals-table-desc">Real-time scan across Nifty 500 & High-Beta Momentum Leaders with 7-factor Pro Confirmation</p>
+                </div>
+                <div class="legend">
+                    <span class="legend-item"><span class="badge badge-success">ACTIONABLE ENTRY</span> Safe entry zone & risk</span>
+                    <span class="legend-item"><span class="badge badge-warning">OVEREXTENDED</span> Chasing risk; price surged</span>
+                    <span class="legend-item"><span class="badge badge-danger">INVALIDATED</span> Broken back below EMA/ST</span>
+                    <span class="legend-item"><span class="badge badge-amber">RISK TOO WIDE</span> Exceeds risk tolerance</span>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loading-spinner" class="loading-container">
+                <div class="spinner"></div>
+                <div class="loading-text" id="loading-text">Scanning Nifty 500 Indian Stocks in parallel...</div>
+                <div class="loading-sub" id="loading-sub">Calculating indicators and real-time entry suitability</div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="empty-container hidden">
+                <i class="fa-solid fa-filter-circle-xmark empty-icon"></i>
+                <div class="empty-title">No matching stocks found</div>
+                <div class="empty-desc">Try clearing your search query or selecting "All Triggers".</div>
+            </div>
+
+            <!-- Cards / Table Container -->
+            <div id="signals-container" class="signals-list">
+                <!-- Dynamically populated by app.js -->
+            </div>
+        </section>
+        </div>
+        <!-- END SCREENER VIEW -->
+
+        <!-- PRO SWING TRADER PORTFOLIO VIEW -->
+        <div id="portfolio-view" class="hidden">
+            <!-- Portfolio Top Header Banner -->
+            <section class="portfolio-hero-banner">
+                <div class="p-hero-content">
+                    <div class="p-hero-badge"><i class="fa-solid fa-crown"></i> PRO SWING TRADING SYSTEM</div>
+                    <h1 class="p-hero-title">Systematic Swing Portfolio & Real-Time Technical Engine</h1>
+                    <p class="p-hero-desc">
+                        Strict Long-Only Daily Swing Architecture (Daily Close > 50 EMA & Supertrend Bullish Green). Enter any stock for instant Buy Entry feasibility. For your active portfolio, exit signals are strictly triggered when <strong>Supertrend asks to Sell</strong> or when price reaches the <strong>Price Action High / All-Time High (ATH)</strong>.
+                    </p>
+                </div>
+                <div class="p-hero-actions">
+                    <button id="btn-refresh-portfolio" class="btn btn-primary">
+                        <i class="fa-solid fa-rotate"></i> Refresh Live Quotes
+                    </button>
+                </div>
+            </section>
+
+            <!-- Multiple Portfolios Manager Bar & Tabs -->
+            <div class="portfolio-manager-bar card-glass">
+                <div class="pmb-left">
+                    <span class="pmb-label"><i class="fa-solid fa-folder-tree text-cyan"></i> Portfolios:</span>
+                    <div id="portfolio-tabs-container" class="portfolio-tabs-list">
+                        <!-- Populated by app.js -->
+                    </div>
+                </div>
+                <div class="pmb-actions">
+                    <button type="button" class="btn btn-sm btn-outline-cyan" id="btn-create-portfolio" onclick="openCreatePortfolioModal()">
+                        <i class="fa-solid fa-plus"></i> New Portfolio
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" id="btn-portfolio-settings" title="Portfolio Settings & Renaming" onclick="openPortfolioSettingsModal()">
+                        <i class="fa-solid fa-gear"></i> Settings
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 1: Custom Stock Analyzer & Add Tool -->
+            <section class="card-glass p-analyzer-section">
+                <div class="p-card-header">
+                    <div>
+                        <h2 class="p-card-title"><i class="fa-solid fa-crosshairs text-cyan"></i> Stock Analyzer & Portfolio Manager</h2>
+                        <p class="p-card-sub">Analyze any NSE stock or add it to your live tracking. We only deal with Long setups (Daily Close above 50 EMA & Supertrend Bullish Green).</p>
+                    </div>
+                </div>
+
+                <div class="p-analyzer-body">
+                    <!-- Status Segmented Toggle -->
+                    <div class="segmented-control">
+                        <button type="button" class="seg-btn active" id="seg-btn-watchlist" data-type="watchlist">
+                            <i class="fa-solid fa-binoculars"></i> Looking to Buy (Watchlist / Entry Check)
+                        </button>
+                        <button type="button" class="seg-btn" id="seg-btn-holding" data-type="holding">
+                            <i class="fa-solid fa-vault"></i> Already Bought (Portfolio / Exit & SL Tracker)
+                        </button>
+                    </div>
+
+                    <form id="portfolio-add-form" class="p-form">
+                        <!-- Symbol Input & Suggestions -->
+                        <div class="form-row">
+                            <div class="form-group flex-2">
+                                <label for="input-p-symbol">NSE Stock Symbol <span class="text-red">*</span></label>
+                                <div class="input-with-icon">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="input-p-symbol" placeholder="e.g. RELIANCE, TATASTEEL, INFY, BEL, CDSL..." required autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="form-group flex-3">
+                                <label>Quick Select Popular Swing Stocks</label>
+                                <div class="quick-chips" id="quick-stock-chips">
+                                    <span class="chip" data-sym="RELIANCE">RELIANCE</span>
+                                    <span class="chip" data-sym="TATASTEEL">TATASTEEL</span>
+                                    <span class="chip" data-sym="INFY">INFY</span>
+                                    <span class="chip" data-sym="BEL">BEL</span>
+                                    <span class="chip" data-sym="HAL">HAL</span>
+                                    <span class="chip" data-sym="TITAN">TITAN</span>
+                                    <span class="chip" data-sym="POLYCAB">POLYCAB</span>
+                                    <span class="chip" data-sym="CDSL">CDSL</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fields for ALREADY BOUGHT -->
+                        <div id="holding-fields" class="form-subfields hidden">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="input-p-buyprice">Avg Buy Price (₹) <span class="text-red">*</span></label>
+                                    <input type="number" id="input-p-buyprice" step="0.05" placeholder="e.g. 142.50">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-p-qty">Quantity (Shares) <span class="text-red">*</span></label>
+                                    <input type="number" id="input-p-qty" min="1" step="1" placeholder="e.g. 100">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-p-buydate">Buy Date</label>
+                                    <input type="date" id="input-p-buydate">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-p-sl">Initial Stop-Loss (₹) <span class="text-muted">(Optional)</span></label>
+                                    <input type="number" id="input-p-sl" step="0.05" placeholder="Auto calculated if blank">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fields for LOOKING TO BUY (Watchlist) -->
+                        <div id="watchlist-fields" class="form-subfields">
+                            <div class="form-row">
+                                <div class="form-group flex-1">
+                                    <label for="input-p-target-entry">Target Entry Price (₹) <span class="text-muted">(Optional)</span></label>
+                                    <input type="number" id="input-p-target-entry" step="0.05" placeholder="Desired limit entry price">
+                                </div>
+                                <div class="form-group flex-2">
+                                    <label for="input-p-notes">Trade Setup Notes <span class="text-muted">(Optional)</span></label>
+                                    <input type="text" id="input-p-notes" placeholder="e.g. 50 EMA bounce, waiting for Supertrend green confirmation">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions-row">
+                            <button type="button" id="btn-quick-analyze" class="btn btn-secondary">
+                                <i class="fa-solid fa-bolt"></i> Live Technical Analysis
+                            </button>
+                            <button type="submit" id="btn-add-stock" class="btn btn-primary">
+                                <i class="fa-solid fa-plus"></i> <span id="btn-add-text">Add to Watchlist</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Instant Technical Analysis Preview Box -->
+                    <div id="live-analysis-preview" class="analysis-preview-card hidden">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Card 2: Portfolio KPI Metrics Bar -->
+            <section class="p-kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-blue"><i class="fa-solid fa-wallet"></i></div>
+                    <div class="kpi-info">
+                        <div class="kpi-label">Total Capital Invested</div>
+                        <div class="kpi-value" id="pkpi-invested">₹0.00</div>
+                        <div class="kpi-sub" id="pkpi-capital-deployed">0% of total capital</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-purple"><i class="fa-solid fa-chart-pie"></i></div>
+                    <div class="kpi-info">
+                        <div class="kpi-label">Current Portfolio Value</div>
+                        <div class="kpi-value" id="pkpi-value">₹0.00</div>
+                        <div class="kpi-sub" id="pkpi-active-count">0 Active Holdings</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card kpi-highlight" id="pkpi-pnl-card">
+                    <div class="kpi-icon icon-green"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                    <div class="kpi-info">
+                        <div class="kpi-label">Total Unrealized P&L</div>
+                        <div class="kpi-value text-green" id="pkpi-pnl">₹0.00 (+0.0%)</div>
+                        <div class="kpi-sub">Open Positions Return</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card" id="pkpi-risk-card">
+                    <div class="kpi-icon icon-amber"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="kpi-info">
+                        <div class="kpi-label">Total Open Risk at Stake</div>
+                        <div class="kpi-value text-amber" id="pkpi-open-risk">₹0.00</div>
+                        <div class="kpi-sub" id="pkpi-risk-pct">0.0% of Capital at risk</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-gold"><i class="fa-solid fa-trophy"></i></div>
+                    <div class="kpi-info">
+                        <div class="kpi-label">Closed Trade Journal</div>
+                        <div class="kpi-value text-gold" id="pkpi-realized-pnl">₹0.00</div>
+                        <div class="kpi-sub" id="pkpi-win-rate">Win Rate: 0% (0 trades)</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Card 2.5: Aladdin Diagnostic Quick Bar -->
+            <section class="aladdin-quick-banner" id="aladdin-quick-banner">
+                <div class="aladdin-qb-left">
+                    <div class="aladdin-score-circle" id="aladdin-score-circle">
+                        <span class="aladdin-score-val" id="aladdin-score-val">--</span>
+                        <span class="aladdin-score-lbl">Aladdin Score</span>
+                    </div>
+                    <div class="aladdin-qb-text">
+                        <div class="aladdin-qb-title" id="aladdin-qb-title">Aladdin Portfolio Doctor & Diagnostic Matrix</div>
+                        <div class="aladdin-qb-sub" id="aladdin-qb-sub">Analyzing institutional trend alignment, Stage 4 value traps, and recovery roadmaps...</div>
+                    </div>
+                </div>
+                <div class="aladdin-qb-right">
+                    <div class="aladdin-stat-pill bg-green-glow" id="pill-runners">
+                        <span class="pill-lbl">Stage 2 Winners</span>
+                        <span class="pill-val text-green" id="val-runners-stat">--</span>
+                    </div>
+                    <div class="aladdin-stat-pill bg-blue-glow" id="pill-bases">
+                        <span class="pill-lbl">Stage 1 Bases</span>
+                        <span class="pill-val text-cyan" id="val-bases-stat">--</span>
+                    </div>
+                    <div class="aladdin-stat-pill bg-red-glow" id="pill-traps">
+                        <span class="pill-lbl">Stage 4 Traps</span>
+                        <span class="pill-val text-red" id="val-traps-stat">--</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-cyan" id="btn-view-aladdin-matrix">
+                        <i class="fa-solid fa-brain-circuit"></i> Open Aladdin Doctor
+                    </button>
+                </div>
+            </section>
+
+            <!-- Card 3: Pro Risk Alerts Banner -->
+            <div id="portfolio-alerts-container" class="portfolio-alerts-container hidden">
+                <!-- Dynamically populated -->
+            </div>
+
+            <!-- Pro Trader Rules Summary -->
+            <section class="card-glass pro-rules-card">
+                <div class="pro-rules-header">
+                    <div>
+                        <span class="pro-tag"><i class="fa-solid fa-award"></i> PRO SWING DISCIPLINE</span>
+                        <h3 class="pro-rules-title">5 Non-Negotiable Rules to Make Consistent Swing Profits</h3>
+                    </div>
+                    <button class="btn btn-sm btn-outline" id="btn-toggle-pro-rules">
+                        <i class="fa-solid fa-chevron-down"></i> <span id="toggle-rules-text">View Rules</span>
+                    </button>
+                </div>
+                <div class="pro-rules-grid hidden" id="pro-rules-content">
+                    <div class="rule-item">
+                        <div class="rule-num">1</div>
+                        <div class="rule-body">
+                            <h4>Buy Only In Secular Uptrends</h4>
+                            <p>Never enter a stock trading below its 50 EMA or when Supertrend is Red. Upward momentum provides the tailwind.</p>
+                        </div>
+                    </div>
+                    <div class="rule-item">
+                        <div class="rule-num">2</div>
+                        <div class="rule-body">
+                            <h4>Hard 1% to 2% Risk Cap</h4>
+                            <p>Calculate your share size based on the Stop Loss distance. Never risk more than ₹2,000 to ₹4,000 per 2 Lakh account.</p>
+                        </div>
+                    </div>
+                    <div class="rule-item">
+                        <div class="rule-num">3</div>
+                        <div class="rule-body">
+                            <h4>Exit on Supertrend Sell Signal</h4>
+                            <p>When Supertrend triggers a Sell signal (turns Red or price closes below Supertrend), exit immediately. Never hold or hope against a confirmed sell.</p>
+                        </div>
+                    </div>
+                    <div class="rule-item">
+                        <div class="rule-num">4</div>
+                        <div class="rule-body">
+                            <h4>Exit / Book Profit at Price Action High / ATH</h4>
+                            <p>When price reaches the major Price Action Swing High or 52-Week All-Time High (ATH), book profits into strength at key resistance.</p>
+                        </div>
+                    </div>
+                    <div class="rule-item">
+                        <div class="rule-num">5</div>
+                        <div class="rule-body">
+                            <h4>Ride Bullish Supertrend with Trailing SL</h4>
+                            <p>As long as Supertrend remains Bullish Green, hold your winning trades and let the Supertrend line automatically trail your stop-loss higher.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Card 4: Sub-Tabs & Lists -->
+            <section class="p-tabs-section">
+                <div class="portfolio-subtabs">
+                    <button class="p-subtab active" data-target="holdings" id="subtab-holdings">
+                        <i class="fa-solid fa-vault"></i> Active Holdings (Exit & Trailing Tracker)
+                        <span class="badge badge-pill" id="badge-holdings-count">0</span>
+                    </button>
+                    <button class="p-subtab p-subtab-aladdin" data-target="aladdin" id="subtab-aladdin">
+                        <i class="fa-solid fa-brain-circuit text-cyan"></i> Aladdin Portfolio Doctor & Recovery
+                        <span class="badge badge-pill badge-danger" id="badge-aladdin-traps">--</span>
+                    </button>
+                    <button class="p-subtab" data-target="watchlist" id="subtab-watchlist">
+                        <i class="fa-solid fa-binoculars"></i> Watchlist & Buy Candidates (Entry Signals)
+                        <span class="badge badge-pill" id="badge-watchlist-count">0</span>
+                    </button>
+                    <button class="p-subtab" data-target="history" id="subtab-history">
+                        <i class="fa-solid fa-book-bookmark"></i> Trade Journal & History
+                        <span class="badge badge-pill" id="badge-history-count">0</span>
+                    </button>
+                </div>
+
+                <!-- Tab 1: Holdings Content -->
+                <div id="tab-content-holdings" class="p-tab-pane">
+                    <div id="holdings-list-container" class="portfolio-cards-grid">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Tab 2: Aladdin Doctor Content -->
+                <div id="tab-content-aladdin" class="p-tab-pane hidden">
+                    <div id="aladdin-doctor-container" class="aladdin-container">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+
+                <!-- Tab 3: Watchlist Content -->
+                <div id="tab-content-watchlist" class="p-tab-pane hidden">
+                    <div id="watchlist-list-container" class="portfolio-cards-grid">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Tab 4: History Journal Content -->
+                <div id="tab-content-history" class="p-tab-pane hidden">
+                    <div id="history-list-container" class="history-table-wrapper">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </section>
+        </div>
+        <!-- END PRO SWING TRADER PORTFOLIO VIEW -->
+    </main>
+
+    <!-- Interactive Candlestick Chart Modal -->
+    <div id="chart-modal" class="modal-overlay hidden">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3 id="modal-stock-title" class="modal-stock-title">RELIANCE - Reliance Industries Ltd</h3>
+                    <div class="modal-badges" id="modal-stock-badges">
+                        <!-- Badges -->
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="btn-close-chart-modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="chart-stats-bar" id="modal-stats-bar">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="chart-canvas-wrapper">
+                    <canvas id="stock-chart-canvas"></canvas>
+                </div>
+                <div class="chart-legend-row" id="chart-legend-row">
+                    <span class="chart-legend-pill"><span class="legend-color color-cyan"></span> <span id="legend-ema-label">50 EMA</span></span>
+                    <span class="chart-legend-pill" id="legend-secondary-pill"><span class="legend-color color-purple"></span> 200 EMA</span>
+                    <span class="chart-legend-pill"><span class="legend-color color-green"></span> Supertrend Bullish</span>
+                    <span class="chart-legend-pill"><span class="legend-color color-red"></span> Supertrend Bearish</span>
+                    <span class="chart-legend-pill"><span class="legend-color color-sl"></span> Stop-Loss Level</span>
+                    <span class="chart-legend-pill"><span class="legend-color color-target"></span> Target 1 & 2</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Position Sizing & Risk Management Calculator Modal -->
+    <div id="calc-modal" class="modal-overlay hidden">
+        <div class="modal-dialog modal-dialog-sm">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3 class="modal-stock-title"><i class="fa-solid fa-calculator"></i> Algo Position Size & Risk Calculator</h3>
+                    <div class="modal-subtitle" id="calc-modal-sub">Capital Protection Risk Sizing for Indian Stock Markets</div>
+                </div>
+                <button class="modal-close-btn" id="btn-close-calc-modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="calc-form" class="calc-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Stock Symbol</label>
+                            <input type="text" id="calc-symbol" readonly class="input-readonly">
+                        </div>
+                        <div class="form-group">
+                            <label>Total Account Capital (₹)</label>
+                            <input type="number" id="calc-capital" value="200000" step="5000" min="10000">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Risk Per Trade (%)</label>
+                            <select id="calc-risk-pct">
+                                <option value="0.5" selected>0.5% (Intraday / Conservative)</option>
+                                <option value="1.0">1.0% (Standard Swing Rule)</option>
+                                <option value="1.5">1.5% (Moderate)</option>
+                                <option value="2.0">2.0% (Aggressive)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Entry Price (₹)</label>
+                            <input type="number" id="calc-entry-price" step="0.05" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Stop-Loss Price (₹)</label>
+                            <input type="number" id="calc-stop-loss" step="0.05" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Target 1 Price (₹)</label>
+                            <input type="number" id="calc-target1" step="0.05">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fa-solid fa-chart-pie"></i> Calculate Recommended Order Size
+                    </button>
+                </form>
+
+                <div id="calc-results" class="calc-results-box hidden">
+                    <div class="calc-metric-grid">
+                        <div class="calc-metric">
+                            <div class="calc-m-label">Max Risk Tolerated</div>
+                            <div class="calc-m-val text-red" id="res-max-risk">₹0</div>
+                        </div>
+                        <div class="calc-metric highlight-box">
+                            <div class="calc-m-label">Recommended Quantity</div>
+                            <div class="calc-m-val text-green" id="res-shares">0 Shares</div>
+                        </div>
+                        <div class="calc-metric">
+                            <div class="calc-m-label">Total Capital Required</div>
+                            <div class="calc-m-val" id="res-total-invest">₹0</div>
+                        </div>
+                        <div class="calc-metric">
+                            <div class="calc-m-label">Portfolio Allocation</div>
+                            <div class="calc-m-val" id="res-portfolio-pct">0%</div>
+                        </div>
+                        <div class="calc-metric">
+                            <div class="calc-m-label">Potential Gain @ Target 1</div>
+                            <div class="calc-m-val text-green" id="res-profit-t1">₹0</div>
+                        </div>
+                        <div class="calc-metric">
+                            <div class="calc-m-label">Potential Gain @ Target 2</div>
+                            <div class="calc-m-val text-green" id="res-profit-t2">₹0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Holding / Watchlist Item Modal -->
+    <div id="edit-item-modal" class="modal-overlay hidden">
+        <div class="modal-dialog modal-dialog-sm">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3 class="modal-stock-title" id="edit-modal-title"><i class="fa-solid fa-pen-to-square"></i> Edit Portfolio Item</h3>
+                    <div class="modal-subtitle" id="edit-modal-subtitle">Modify position sizing, stop-loss or trade notes</div>
+                </div>
+                <button class="modal-close-btn" id="btn-close-edit-modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-item-form" class="calc-form">
+                    <input type="hidden" id="edit-item-id">
+                    <input type="hidden" id="edit-item-type">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Stock Symbol</label>
+                            <input type="text" id="edit-symbol" readonly class="input-readonly">
+                        </div>
+                        <div class="form-group" id="edit-group-buydate">
+                            <label>Buy Date</label>
+                            <input type="date" id="edit-buydate">
+                        </div>
+                    </div>
+
+                    <div id="edit-holding-fields">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Buy Price (₹) <span class="text-red">*</span></label>
+                                <input type="number" id="edit-buyprice" step="0.05" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Quantity (Shares) <span class="text-red">*</span></label>
+                                <input type="number" id="edit-quantity" min="1" step="1" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Initial Stop Loss (₹)</label>
+                                <input type="number" id="edit-initial-sl" step="0.05">
+                            </div>
+                            <div class="form-group">
+                                <label>Target 1 (1.5R) (₹)</label>
+                                <input type="number" id="edit-target1" step="0.05">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Target 2 (2.5R) (₹)</label>
+                                <input type="number" id="edit-target2" step="0.05">
+                            </div>
+                            <div class="form-group">
+                                <label>Target 3 (3.5R / ATH) (₹)</label>
+                                <input type="number" id="edit-target3" step="0.05">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Target 4 (5.0R Runner) (₹)</label>
+                                <input type="number" id="edit-target4" step="0.05">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="edit-watchlist-fields" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Target Entry Price (₹)</label>
+                                <input type="number" id="edit-target-entry" step="0.05">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Trade Setup Notes</label>
+                        <input type="text" id="edit-notes" placeholder="Reason for setup or adjustments">
+                    </div>
+
+                    <div class="form-actions-row">
+                        <button type="button" class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Close Trade & Record to History Modal -->
+    <div id="close-trade-modal" class="modal-overlay hidden">
+        <div class="modal-dialog modal-dialog-sm">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3 class="modal-stock-title"><i class="fa-solid fa-flag-checkered text-gold"></i> Close Trade & Record in History</h3>
+                    <div class="modal-subtitle">Log realized profit/loss into your Pro Trade Journal</div>
+                </div>
+                <button class="modal-close-btn" id="btn-close-exit-modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="close-trade-form" class="calc-form">
+                    <input type="hidden" id="exit-item-id">
+                    <input type="hidden" id="exit-buy-price">
+                    <input type="hidden" id="exit-qty">
+
+                    <div class="exit-summary-box">
+                        <div class="exit-sum-row">
+                            <span>Stock: <strong id="exit-symbol-label">--</strong></span>
+                            <span>Quantity: <strong id="exit-qty-label">--</strong></span>
+                            <span>Buy Price: <strong id="exit-buy-label">₹--</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Exit Price (₹) <span class="text-red">*</span></label>
+                            <input type="number" id="input-exit-price" step="0.05" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Exit Date</label>
+                            <input type="date" id="input-exit-date" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Duration / Hold Days <span class="text-muted">(Any number)</span></label>
+                            <input type="number" id="input-exit-hold-days" min="0" placeholder="Auto-calculated, or enter any days">
+                        </div>
+                        <div class="form-group">
+                            <label>Reason for Exit</label>
+                            <select id="select-exit-reason">
+                                <option value="Supertrend Asking to Sell (Trend Breakdown)">Supertrend Asking to Sell (Trend Breakdown)</option>
+                                <option value="Price Action High Reached (Swing Target Hit)">Price Action High Reached (Swing Target Hit)</option>
+                                <option value="All-Time High / 52W High Reached (ATH Peak)">All-Time High / 52W High Reached (ATH Peak)</option>
+                                <option value="Supertrend Trailing Stop-Loss Triggered">Supertrend Trailing Stop-Loss Triggered</option>
+                                <option value="Target 1 Hit - Booked Profits">Target 1 Hit - Booked Profits</option>
+                                <option value="Manual Exit - Capital Reallocation">Manual Exit - Capital Reallocation</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="exit-preview-pnl" id="exit-pnl-preview">
+                        <div class="exit-pnl-title">Estimated Realized P&L:</div>
+                        <div class="exit-pnl-val" id="exit-pnl-display">₹0.00 (+0.0%)</div>
+                    </div>
+
+                    <div class="form-actions-row">
+                        <button type="button" class="btn btn-secondary" id="btn-cancel-exit">Cancel</button>
+                        <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check-double"></i> Confirm Exit & Log to Journal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic User Confirmation Modal (Delete / Critical Actions) -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="modal-dialog modal-dialog-xs">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3 class="modal-stock-title text-red"><i class="fa-solid fa-triangle-exclamation"></i> Confirm Action</h3>
+                </div>
+                <button class="modal-close-btn" id="btn-close-confirm-modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-modal-message" class="confirm-msg-text">Are you sure you want to proceed?</p>
+                <div class="confirm-actions-row">
+                    <button type="button" class="btn btn-secondary" id="btn-confirm-cancel">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="btn-confirm-proceed">Confirm & Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create New Portfolio Modal -->
+    <div id="create-portfolio-modal" class="modal-overlay hidden">
+        <div class="modal-dialog modal-dialog-sm">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3 class="modal-stock-title text-cyan"><i class="fa-solid fa-folder-plus"></i> Create New Portfolio</h3>
+                    <p class="modal-stock-sub">Create an isolated portfolio to organize specific swing strategies, sectors, or accounts.</p>
+                </div>
+                <button class="modal-close-btn" id="btn-close-create-pmodal" onclick="closeCreatePortfolioModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="create-portfolio-form" onsubmit="handleCreatePortfolioSubmit(event)">
+                    <div class="form-group mb-3">
+                        <label for="input-new-p-name">Portfolio Name <span class="text-red">*</span></label>
+                        <input type="text" id="input-new-p-name" placeholder="e.g. Momentum Alpha, PSU & Defence, SmallCap Growth..." required autocomplete="off">
+                    </div>
+                    <div class="form-row mb-3">
+                        <div class="form-group flex-1">
+                            <label for="input-new-p-capital">Allocated Capital (₹)</label>
+                            <input type="number" id="input-new-p-capital" value="500000" step="10000" min="10000">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="input-new-p-risk">Max Risk Per Trade (%)</label>
+                            <input type="number" id="input-new-p-risk" value="1.0" step="any" min="0.01" max="10">
+                        </div>
+                    </div>
+                    <div class="form-actions-row">
+                        <button type="button" class="btn btn-secondary" id="btn-cancel-create-p" onclick="closeCreatePortfolioModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Create Portfolio</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portfolio Settings / Rename / Delete Modal -->
+    <div id="portfolio-settings-modal" class="modal-overlay hidden">
+        <div class="modal-dialog modal-dialog-sm">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <h3 class="modal-stock-title text-cyan"><i class="fa-solid fa-sliders"></i> Portfolio Settings</h3>
+                    <p class="modal-stock-sub">Manage name, allocated capital, and risk limits for the active portfolio.</p>
+                </div>
+                <button class="modal-close-btn" id="btn-close-p-settings-modal" onclick="closePortfolioSettingsModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="portfolio-settings-form" onsubmit="handlePortfolioSettingsSubmit(event)">
+                    <input type="hidden" id="settings-p-id">
+                    <div class="form-group mb-3">
+                        <label for="input-settings-p-name">Portfolio Name <span class="text-red">*</span></label>
+                        <input type="text" id="input-settings-p-name" required autocomplete="off">
+                    </div>
+                    <div class="form-row mb-3">
+                        <div class="form-group flex-1">
+                            <label for="input-settings-p-capital">Allocated Capital (₹)</label>
+                            <input type="number" id="input-settings-p-capital" step="10000" min="10000">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="input-settings-p-risk">Max Risk Per Trade (%)</label>
+                            <input type="number" id="input-settings-p-risk" step="any" min="0.01" max="10">
+                        </div>
+                    </div>
+                    <div class="form-actions-row space-between">
+                        <button type="button" class="btn btn-danger-outline" id="btn-delete-active-portfolio" onclick="handleDeleteActivePortfolio()">
+                            <i class="fa-solid fa-trash-can"></i> Delete Portfolio
+                        </button>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-p-settings" onclick="closePortfolioSettingsModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <div>
+                <strong>AlgoQuant India</strong> &bull; Systematic Daily 50 EMA & Intraday 15m 200 EMA + Supertrend (10,3) Screener.
+            </div>
+            <div class="footer-disclaimer">
+                Covering NSE Nifty 500 Market Cap Companies. For systematic quantitative trading & educational analysis.
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js?v=3.5"></script>
+</body>
+</html>
