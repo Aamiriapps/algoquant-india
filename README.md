@@ -82,3 +82,19 @@ python algo_scanner_cli.py --mode intraday --actionable
 python algo_scanner_cli.py --mode daily --enhanced
 python algo_scanner_cli.py --mode intraday --enhanced
 ```
+
+---
+
+## 👨‍💻 Author & Maintainer
+
+**Mohammed Sadakath Ali**
+- **GitHub**: [@Aamiriapps](https://github.com/Aamiriapps) / [@mohammedsadakathali-hub](https://github.com/mohammedsadakathali-hub)
+- **Project**: [AlgoQuant India](https://github.com/Aamiriapps/algoquant-india)
+- **Focus**: Quantitative Finance, Algorithmic Trading Systems & Full-Stack Development
+
+---
+
+## ⚠️ Disclaimer
+
+*AlgoQuant India is designed for algorithmic screening, educational, and research purposes. Market trading involves capital risk. Always practice sound risk management (e.g., maximum 1% risk per trade) and verify setups before executing live trades.*
+
