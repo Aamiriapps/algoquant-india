@@ -524,6 +524,9 @@
                         <i class="fa-solid fa-vault"></i> Active Holdings (Exit & Trailing Tracker)
                         <span class="badge badge-pill" id="badge-holdings-count">0</span>
                     </button>
+                    <button class="p-subtab" data-target="allocation" id="subtab-allocation">
+                        <i class="fa-solid fa-chart-pie text-cyan"></i> Allocation & Weights
+                    </button>
                     <button class="p-subtab p-subtab-aladdin" data-target="aladdin" id="subtab-aladdin">
                         <i class="fa-solid fa-brain-circuit text-cyan"></i> Aladdin Portfolio Doctor & Recovery
                         <span class="badge badge-pill badge-danger" id="badge-aladdin-traps">--</span>
@@ -542,6 +545,13 @@
                 <div id="tab-content-holdings" class="p-tab-pane">
                     <div id="holdings-list-container" class="portfolio-cards-grid">
                         <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Tab 1.5: Allocation & Capital Weights Breakdown Content -->
+                <div id="tab-content-allocation" class="p-tab-pane hidden">
+                    <div id="allocation-breakdown-container">
+                        <!-- Populated dynamically via JS -->
                     </div>
                 </div>
 

@@ -918,6 +918,12 @@ def analyze_entire_portfolio(portfolio_id: str = None, force_refresh: bool = Fal
     capital_deployed_pct = round((total_invested / total_capital * 100.0), 2) if total_capital > 0 else 0.0
     total_risk_pct_of_capital = round((total_open_risk / total_capital * 100.0), 2) if total_capital > 0 else 0.0
 
+    # Calculate exact percentage weight/allocation for each holding
+    for h in analyzed_holdings:
+        inv = float(h.get("invested_capital", 0.0))
+        h["allocation_pct"] = round((inv / total_invested * 100.0), 2) if total_invested > 0 else 0.0
+        h["capital_weight_pct"] = round((inv / total_capital * 100.0), 2) if total_capital > 0 else 0.0
+
     # Risk Alerts & Pro Action Recommendations
     risk_alerts = []
     exit_now_count = 0

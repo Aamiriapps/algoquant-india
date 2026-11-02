@@ -1044,11 +1044,16 @@ function initPortfolioManager() {
             portfolioState.activeSubtab = target;
 
             const elHoldings = document.getElementById('tab-content-holdings');
+            const elAllocation = document.getElementById('tab-content-allocation');
             const elAladdin = document.getElementById('tab-content-aladdin');
             const elWatchlist = document.getElementById('tab-content-watchlist');
             const elHistory = document.getElementById('tab-content-history');
 
             if (elHoldings) elHoldings.classList.toggle('hidden', target !== 'holdings');
+            if (elAllocation) {
+                elAllocation.classList.toggle('hidden', target !== 'allocation');
+                if (target === 'allocation') renderAllocationBreakdown();
+            }
             if (elAladdin) elAladdin.classList.toggle('hidden', target !== 'aladdin');
             if (elWatchlist) elWatchlist.classList.toggle('hidden', target !== 'watchlist');
             if (elHistory) elHistory.classList.toggle('hidden', target !== 'history');
@@ -1425,6 +1430,7 @@ async function fetchPortfolioData(force = false) {
 
             renderPortfolioSummary();
             renderHoldings();
+            renderAllocationBreakdown();
             renderAladdinDoctor();
             renderWatchlist();
             renderHistory();
@@ -1656,6 +1662,9 @@ function renderHoldings() {
                         <div>
                             <div class="p-name">${h.name}</div>
                             <span class="p-sector-badge">${h.sector} &bull; Bought ${h.hold_days}d ago</span>
+                            <span class="badge badge-cyan" style="font-size:0.72rem; font-weight:700; margin-left:0.35rem;" title="Percentage allocation of total invested capital">
+                                <i class="fa-solid fa-chart-pie"></i> ${h.allocation_pct || 0}% Weight
+                            </span>
                         </div>
                     </div>
                     <div class="p-price-group">
@@ -1679,6 +1688,9 @@ function renderHoldings() {
                     <div class="p-metric-item">
                         <span class="p-m-lbl">Invested Capital</span>
                         <span class="p-m-val">₹${h.invested_capital.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                        <span style="font-size:0.75rem; color:var(--accent-cyan); font-weight:700;">
+                            ${h.allocation_pct || 0}% allocation
+                        </span>
                     </div>
                     <div class="p-metric-item">
                         <span class="p-m-lbl">Current Value</span>
@@ -2064,6 +2076,153 @@ function renderWatchlist() {
     }).join('');
 
     bindPortfolioCardEvents();
+}
+
+// Render Allocation & Capital Weights Breakdown
+function renderAllocationBreakdown() {
+    const container = document.getElementById('allocation-breakdown-container');
+    if (!container) return;
+
+    const holdings = portfolioState.holdings || [];
+    const summary = portfolioState.summary || {};
+    const totalInvested = summary.total_invested || 0;
+    const totalCapital = summary.total_capital || 500000;
+
+    if (holdings.length === 0) {
+        container.innerHTML = `
+            <div class="empty-container">
+                <i class="fa-solid fa-chart-pie empty-icon"></i>
+                <div class="empty-title">No Active Holdings to Allocate</div>
+                <div class="empty-desc">Add stocks to your active holdings to see individual percentage weights, concentration distribution, and capital deployment analysis.</div>
+            </div>
+        `;
+        return;
+    }
+
+    // Sort holdings by invested capital descending
+    const sorted = [...holdings].sort((a, b) => (b.invested_capital || 0) - (a.invested_capital || 0));
+
+    // Sector breakdown calculation
+    const sectorMap = {};
+    sorted.forEach(h => {
+        const sec = h.sector || 'Others';
+        sectorMap[sec] = (sectorMap[sec] || 0) + (h.invested_capital || 0);
+    });
+    const sectorsSorted = Object.entries(sectorMap)
+        .map(([name, inv]) => ({
+            name,
+            invested: inv,
+            pct: totalInvested > 0 ? ((inv / totalInvested) * 100).toFixed(1) : 0
+        }))
+        .sort((a, b) => b.invested - a.invested);
+
+    const colors = ['#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#3b82f6', '#14b8a6', '#f97316', '#6366f1', '#a855f7'];
+
+    container.innerHTML = `
+        <div class="card-glass" style="padding:1.5rem; margin-bottom:1.5rem; border-radius:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.25rem;">
+                <div>
+                    <h3 style="margin:0; font-size:1.15rem; display:flex; align-items:center; gap:0.5rem;">
+                        <i class="fa-solid fa-chart-pie text-cyan"></i> Portfolio Capital Allocation & Position Weights
+                    </h3>
+                    <p style="margin:0.25rem 0 0 0; font-size:0.8rem; color:var(--text-secondary);">
+                        Total Deployed: <strong>₹${totalInvested.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong> (${summary.capital_deployed_pct || 0}% of ₹${(totalCapital/100000).toFixed(1)}L Capital) across <strong>${holdings.length} stocks</strong>
+                    </p>
+                </div>
+                <div style="font-size:0.8rem; background:rgba(6, 182, 212, 0.1); border:1px solid rgba(6, 182, 212, 0.25); border-radius:8px; padding:0.4rem 0.8rem; color:var(--accent-cyan);">
+                    <i class="fa-solid fa-shield-halved"></i> Recommended Max Per Stock: <strong>15% - 25%</strong>
+                </div>
+            </div>
+
+            <!-- Multi-Color Segmented Allocation Bar -->
+            <div style="display:flex; height:20px; width:100%; border-radius:10px; overflow:hidden; background:rgba(255,255,255,0.05); margin-bottom:1.5rem; border:1px solid rgba(255,255,255,0.1);">
+                ${sorted.map((h, idx) => {
+                    const color = colors[idx % colors.length];
+                    const alloc = h.allocation_pct || (totalInvested > 0 ? ((h.invested_capital / totalInvested) * 100).toFixed(1) : 0);
+                    if (alloc <= 0) return '';
+                    return `<div style="width:${alloc}%; background:${color}; height:100%;" title="${h.symbol}: ${alloc}% (₹${Math.round(h.invested_capital).toLocaleString('en-IN')})"></div>`;
+                }).join('')}
+            </div>
+
+            <!-- Stock Allocation Table -->
+            <div class="history-table-wrapper">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Stock</th>
+                            <th>Sector</th>
+                            <th>Invested Capital</th>
+                            <th>Current Value</th>
+                            <th>Portfolio Allocation %</th>
+                            <th>Weight Visual</th>
+                            <th>Concentration Risk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sorted.map((h, idx) => {
+                            const alloc = parseFloat(h.allocation_pct || (totalInvested > 0 ? ((h.invested_capital / totalInvested) * 100).toFixed(2) : 0));
+                            const color = colors[idx % colors.length];
+                            let riskBadge = '<span class="badge badge-success">Balanced (&le;15%)</span>';
+                            if (alloc > 25) {
+                                riskBadge = '<span class="badge badge-danger">High Concentration (&gt;25%)</span>';
+                            } else if (alloc > 15) {
+                                riskBadge = '<span class="badge badge-warning">Moderate (15-25%)</span>';
+                            }
+
+                            return `
+                                <tr>
+                                    <td>
+                                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                                            <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${color};"></span>
+                                            <strong>${h.symbol}</strong>
+                                            <small style="color:var(--text-muted); font-size:0.75rem;">(${h.quantity} shs)</small>
+                                        </div>
+                                    </td>
+                                    <td><small style="color:var(--text-secondary);">${h.sector}</small></td>
+                                    <td>₹${h.invested_capital.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                                    <td class="${(h.unrealized_pnl || 0) >= 0 ? 'text-green' : 'text-red'} font-bold">
+                                        ₹${h.current_value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </td>
+                                    <td style="font-weight:800; font-family:var(--font-mono); font-size:0.95rem; color:${color};">
+                                        ${alloc.toFixed(2)}%
+                                    </td>
+                                    <td style="min-width:140px;">
+                                        <div style="background:rgba(255,255,255,0.06); height:8px; border-radius:4px; overflow:hidden;">
+                                            <div style="width:${Math.min(alloc, 100)}%; background:${color}; height:100%;"></div>
+                                        </div>
+                                    </td>
+                                    <td>${riskBadge}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Sector Breakdown Grid -->
+            <div style="margin-top:2rem;">
+                <h4 style="font-size:0.95rem; color:var(--text-secondary); margin-bottom:0.75rem; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-layer-group text-cyan"></i> Sector-Wise Capital Distribution
+                </h4>
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:0.75rem;">
+                    ${sectorsSorted.map(sec => `
+                        <div class="card-glass" style="padding:0.75rem 1rem; border-radius:8px; border:1px solid rgba(255,255,255,0.06);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                                <strong style="font-size:0.85rem;">${sec.name}</strong>
+                                <span style="font-weight:700; color:var(--accent-cyan); font-size:0.85rem;">${sec.pct}%</span>
+                            </div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.4rem;">
+                                ₹${Math.round(sec.invested).toLocaleString('en-IN')}
+                            </div>
+                            <div style="background:rgba(255,255,255,0.06); height:5px; border-radius:3px; overflow:hidden;">
+                                <div style="width:${Math.min(sec.pct, 100)}%; background:var(--accent-cyan); height:100%;"></div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 // Render Historical Trade Journal
