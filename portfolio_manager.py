@@ -562,28 +562,8 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
         reasons = []
         action_plan = ""
 
-        # EXIT CONDITION 1: Reached All-Time High (ATH) / 52-Week High (Profit Exit)
-        if curr_close >= high_52w * 0.995 or float(df["high"].iloc[-1]) >= high_52w * 0.998:
-            exit_verdict = "EXIT / BOOK PROFIT - ALL-TIME HIGH (ATH) REACHED"
-            verdict_badge = "gold"
-            urgency = "ACTIONABLE"
-            reasons.append(f"Price Action ATH Achieved: Stock reached its 52-Week High / All-Time High at ₹{high_52w:.2f}!")
-            reasons.append(f"Unrealized profit is +{pnl_pct:.1f}%. Major institutional resistance zone reached.")
-            reasons.append("Pro Rule: Book profits into strength at All-Time High to lock in peak gains before potential pullback.")
-            action_plan = f"EXIT position / BOOK PROFIT on {qty} shares at ₹{curr_close:.2f}. Macro swing target achieved!"
-
-        # EXIT CONDITION 2: Reached Major Price Action Swing High (Resistance Target Exit)
-        elif (curr_close >= swing_high * 0.995 or float(df["high"].iloc[-1]) >= swing_high * 0.998) and swing_high < high_52w * 0.985 and curr_close > buy_price:
-            exit_verdict = "EXIT / BOOK PROFIT - PRICE ACTION HIGH REACHED"
-            verdict_badge = "gold"
-            urgency = "ACTIONABLE"
-            reasons.append(f"Price Action Target Hit: Stock reached major swing resistance high at ₹{swing_high:.2f}!")
-            reasons.append(f"Position is in solid profit (+{pnl_pct:.1f}%). Prior resistance tested.")
-            reasons.append("Pro Rule: Book 50% to 100% profits at key price action resistance, or trail Stop-Loss tight to Supertrend.")
-            action_plan = f"Book profit at ₹{curr_close:.2f}. If holding runner for ATH (₹{high_52w:.2f}), trail Stop-Loss strictly to Supertrend at ₹{curr_st:.2f}."
-
-        # EXIT CONDITION 3: Supertrend Asking to Sell (Trend Exit / Reversal)
-        elif curr_st_dir == -1 or curr_close < curr_st:
+        # CONDITION 1: Supertrend Asking to Sell (Critical Trend Exit / Breakdown)
+        if curr_st_dir == -1 or curr_close < curr_st:
             exit_verdict = "EXIT IMMEDIATELY - SUPERTREND ASKING TO SELL"
             verdict_badge = "danger"
             urgency = "CRITICAL"
@@ -591,6 +571,26 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
             reasons.append(f"Current price (₹{curr_close:.2f}) closed below the Supertrend line. Trend has officially broken down.")
             reasons.append("Pro Trader Rule: Always honor the Supertrend Sell signal immediately. Never hold or hope once Supertrend asks to sell.")
             action_plan = f"EXIT all {qty} shares immediately at market price. Capital preservation is priority #1."
+
+        # CONDITION 2: All-Time High / 52-Week High Breakout (BLUE SKY MOMENTUM - RIDE & TRAIL)
+        elif curr_close >= high_52w * 0.995 or float(df["high"].iloc[-1]) >= high_52w * 0.998:
+            exit_verdict = "HOLD & RIDE - ALL-TIME HIGH (ATH) MOMENTUM BREAKOUT"
+            verdict_badge = "success"
+            urgency = "HOLD"
+            reasons.append(f"🚀 Blue Sky Momentum: Stock is breaking out at All-Time High / 52-Week High (₹{high_52w:.2f})!")
+            reasons.append(f"Unrealized profit is +{pnl_pct:.1f}%. With zero overhead resistance, institutional momentum can accelerate.")
+            reasons.append(f"Pro Momentum Rule: Do NOT exit a breakout winner early. Trail your Stop-Loss strictly along Supertrend (₹{sl_price:.2f}) and let the trend run.")
+            action_plan = f"HOLD & RIDE {qty} shares. Blue-sky breakout active. Trail Stop-Loss pegged to Supertrend at ₹{sl_price:.2f}. Let profits run until Supertrend turns Red."
+
+        # CONDITION 3: Approaching or Reached Major Price Action Swing High
+        elif (curr_close >= swing_high * 0.995 or float(df["high"].iloc[-1]) >= swing_high * 0.998) and swing_high < high_52w * 0.985 and curr_close > buy_price:
+            exit_verdict = "HOLD & RIDE - PRICE ACTION SWING HIGH MOMENTUM"
+            verdict_badge = "success"
+            urgency = "HOLD"
+            reasons.append(f"⚡ Swing Resistance Test: Stock tested prior swing high at ₹{swing_high:.2f} (+{pnl_pct:.1f}% P&L).")
+            reasons.append(f"Supertrend remains Bullish Green at ₹{sl_price:.2f}, indicating buyers are absorbing supply.")
+            reasons.append("Pro Momentum Rule: Trail Stop-Loss to Supertrend. If swing high breaks out, next target is All-Time High.")
+            action_plan = f"HOLD & TRAIL Stop-Loss to Supertrend (₹{sl_price:.2f}). Allow runner to target All-Time High (₹{high_52w:.2f}). Optional: Book partial (25-50%) only if desired."
 
         # CONDITION 4: HOLD & RIDE (Supertrend is Bullish Green and price is approaching Highs)
         else:
@@ -744,15 +744,7 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
                 reasons.append(f"Supertrend (10,3) is in SELL mode (Red) at ₹{curr_st:.2f}.")
             action_plan = f"Do NOT enter. For Long swing buying, wait for Daily Close above 50 EMA (₹{curr_ema50:.2f}) with Supertrend Bullish Green."
 
-        # Rule 2: Already at All-Time High / 52W High (Major Resistance)
-        elif curr_close >= high_52w * 0.99:
-            entry_verdict = "WAIT - AT ALL-TIME HIGH (ATH RESISTANCE)"
-            verdict_badge = "warning"
-            reasons.append(f"Stock is currently trading at its All-Time High / 52-Week High (₹{high_52w:.2f}).")
-            reasons.append("Risk/Reward unfavorable for fresh entry at peak resistance; high risk of rejection.")
-            action_plan = f"Do NOT FOMO buy at ATH. Wait for a healthy pullback to Supertrend support (₹{curr_st:.2f}) before entering."
-
-        # Rule 3: Overextended from 50 EMA / Supertrend
+        # Rule 2: Overextended from 50 EMA / Supertrend
         elif dist_from_ema50_pct > 4.5:
             entry_verdict = "BUY ON PULLBACK (OVEREXTENDED)"
             verdict_badge = "warning"
@@ -762,7 +754,17 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
             reasons.append(f"RSI is {curr_rsi:.1f}. Favorable swing entry requires buying near support.")
             action_plan = f"Wait for pullback to support zone (₹{pullback_zone_low:.2f} - ₹{pullback_zone_high:.2f}) before entering."
 
-        # Rule 4: Actionable Buy Setup (Price above Daily 50 EMA + Supertrend Green)
+        # Rule 3: All-Time High / 52W High Breakout Setup (BLUE SKY MOMENTUM BUY)
+        elif curr_close >= high_52w * 0.99:
+            is_actionable = True
+            entry_verdict = "ACTIONABLE BUY (ATH MOMENTUM BREAKOUT)"
+            verdict_badge = "success"
+            reasons.append(f"🚀 Blue Sky Momentum Breakout: Trading at All-Time High / 52-Week High (₹{high_52w:.2f}).")
+            reasons.append(f"Supertrend is Bullish Green at ₹{curr_st:.2f}. Stock has entered price discovery with zero overhead resistance.")
+            reasons.append(f"Volume conviction ratio is {vol_surge_x}x. High-velocity institutional momentum setup.")
+            action_plan = f"BUY MOMENTUM at ₹{curr_close:.2f}. Set Stop-Loss at Supertrend (₹{suggested_sl:.2f}, -{risk_pct:.1f}%). Targets: T1 ₹{final_t1:.2f} | T2 ₹{final_t2:.2f} | T3 ₹{final_t3:.2f} | T4 ₹{final_t4:.2f}. Trail stop-loss along Supertrend and let winner run."
+
+        # Rule 4: Actionable Buy Setup (Standard Swing: Price above Daily 50 EMA + Supertrend Green)
         else:
             is_actionable = True
             entry_verdict = "ACTIONABLE BUY (PRICE > 50 EMA & SUPERTREND BULLISH)"
@@ -948,6 +950,14 @@ def analyze_entire_portfolio(portfolio_id: str = None, force_refresh: bool = Fal
                     "message": f"Overconcentration Warning: {h['symbol']} represents {inv_pct:.1f}% of total deployed capital. Max recommended is 20-25%."
                 })
 
+        # ATH Momentum Notification
+        if "ALL-TIME HIGH (ATH) MOMENTUM" in h.get("exit_verdict", ""):
+            risk_alerts.append({
+                "type": "success",
+                "symbol": h["symbol"],
+                "message": f"🚀 ATH MOMENTUM BREAKOUT on {h['symbol']}! Breaking out into blue sky territory at ₹{h.get('current_price')} (+{h.get('pnl_pct')}%). Trail SL pegged to Supertrend (₹{h.get('trailing_sl')}) and let winner run."
+            })
+
     # History Performance Stats
     total_trades = len(history)
     wins = [t for t in history if t.get("is_win", False) or t.get("realized_pnl", 0) > 0]
@@ -1071,7 +1081,7 @@ def calculate_aladdin_diagnostics(analyzed_holdings: list, total_invested: float
                 "trailing_sl": h.get("trailing_sl", st_val),
                 "target_ath": h.get("high_52w", 0.0),
                 "verdict": "LET WINNER RUN | TRAIL STOP AT SUPERTREND",
-                "rationale": f"Secular institutional uptrend. Price > 50 EMA on Daily and Supertrend is Bullish Green. Do NOT sell prematurely. Trail stop loss pegged to Supertrend (₹{h.get('trailing_sl', st_val):.2f}). Let profit ride to Target 2 All-Time High (₹{h.get('high_52w', 0.0):.2f})."
+                "rationale": f"Secular institutional uptrend. Price > 50 EMA on Daily and Supertrend is Bullish Green. Do NOT sell prematurely. Trail stop loss pegged to Supertrend (₹{h.get('trailing_sl', st_val):.2f}). Ride momentum into blue sky territory beyond All-Time High (₹{h.get('high_52w', 0.0):.2f})."
             }
             runners.append(item)
             h["aladdin_stage"] = item["stage"]

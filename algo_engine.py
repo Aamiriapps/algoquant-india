@@ -759,8 +759,14 @@ def analyze_daily_stock(item: dict, days_lookback: int = 14) -> list:
                 reasons.append(f"Only {confidence_score}/7 pro filters passed. High probability of false breakout.")
                 action_plan = "Skip this signal. Wait for a setup with 4+ filters confirmed."
             else:
-                suitability_verdict = "ACTIONABLE ENTRY (READY NOW)"
-                verdict_badge = "success"
+                is_ath_breakout = curr_52w_gap <= 1.0
+                if is_ath_breakout and pct_from_trigger <= 3.5:
+                    suitability_verdict = "ACTIONABLE ENTRY (ATH MOMENTUM BREAKOUT)"
+                    verdict_badge = "success"
+                    reasons.append("🚀 ATH MOMENTUM BREAKOUT: Stock is breaking out to 52-Week / All-Time High with zero overhead resistance!")
+                else:
+                    suitability_verdict = "ACTIONABLE ENTRY (READY NOW)"
+                    verdict_badge = "success"
                 if days_ago == 0:
                     reasons.append("Fresh Trigger TODAY: Real-time breakout momentum!")
                 elif days_ago <= 2:
