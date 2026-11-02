@@ -2071,6 +2071,12 @@ function renderHistory() {
     const container = document.getElementById('history-list-container');
     if (!container) return;
 
+    const exportBtn = document.getElementById('btn-export-history-csv');
+    if (exportBtn) {
+        exportBtn.href = `/api/portfolio/export_history_csv?portfolio_id=${encodeURIComponent(portfolioState.active_portfolio_id || 'default')}`;
+        exportBtn.style.display = portfolioState.history.length > 0 ? 'inline-flex' : 'none';
+    }
+
     if (portfolioState.history.length === 0) {
         container.innerHTML = `
             <div class="empty-container">

@@ -27,7 +27,9 @@ from portfolio_manager import (
     create_new_portfolio,
     update_portfolio_meta,
     delete_user_portfolio,
-    switch_active_portfolio
+    switch_active_portfolio,
+    load_portfolio_data,
+    get_portfolio_by_id
 )
 
 if sys.platform == "win32":
@@ -565,6 +567,48 @@ def api_close_trade():
     if "error" in res:
         return jsonify(res), 400
     return jsonify(res)
+
+@app.route("/api/portfolio/export_history_csv", methods=["GET"])
+def api_export_history_csv():
+    """Exports the closed trades journal of the specified portfolio to CSV for audit and methodology study."""
+    data = load_portfolio_data()
+    portfolio_id = request.args.get("portfolio_id")
+    target_p, _ = get_portfolio_by_id(data, portfolio_id)
+    if not target_p:
+        return jsonify({"error": "Portfolio not found"}), 404
+
+    history = target_p.get("history", [])
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Symbol", "Company Name", "Buy Date", "Exit Date", "Hold Duration (Days)",
+        "Buy Price (₹)", "Exit Price (₹)", "Quantity", "Realized P&L (₹)",
+        "Return %", "Outcome", "Exit Reason", "Notes"
+    ])
+    for t in history:
+        writer.writerow([
+            t.get("symbol", ""),
+            t.get("name", ""),
+            t.get("buy_date", ""),
+            t.get("exit_date", ""),
+            t.get("hold_days", 0),
+            t.get("buy_price", 0.0),
+            t.get("exit_price", 0.0),
+            t.get("quantity", 0),
+            t.get("realized_pnl", 0.0),
+            t.get("return_pct", 0.0),
+            "WIN" if t.get("is_win", False) else "LOSS",
+            t.get("exit_reason", ""),
+            t.get("notes", "")
+        ])
+
+    output.seek(0)
+    p_name = target_p.get("name", "portfolio").replace(" ", "_").lower()
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment;filename=trade_history_{p_name}_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"}
+    )
 
 def get_free_port(default_port=5000):
     """Finds an available port if the default port is occupied by another application."""
