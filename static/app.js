@@ -9,7 +9,7 @@ const state = {
     signals: [],
     summary: {},
     activeTab: 'core',       // 'core' | 'enhanced'
-    activeFilter: 'all',     // 'all' | 'actionable' | 'BUY' | 'SELL' | 'not_suitable'
+    activeFilter: 'actionable', // Default: Only show genuine actionable stocks that qualify the entry filter
     searchQuery: '',
     currentChartData: null,
     isLoading: false
