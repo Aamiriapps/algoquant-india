@@ -198,16 +198,48 @@ def api_scan():
     bars = int(request.args.get("bars", 25))
     
     global SCAN_CACHE
+    now_ts = time.time()
+    # Cache Max-Age: 5 minutes (300s) for Intraday mode, 30 minutes (1800s) for Daily mode
+    max_cache_age_sec = 300.0 if mode == "intraday" else 1800.0
+
     if not force_refresh:
-        if SCAN_CACHE[mode]["data"] is not None:
-            return jsonify(SCAN_CACHE[mode]["data"])
-        # Check disk cache
+        # Check in-memory cache and its age
+        mem_data = SCAN_CACHE[mode]["data"]
+        last_scanned_str = SCAN_CACHE[mode]["last_scanned"]
+        is_mem_fresh = False
+        if mem_data is not None and last_scanned_str:
+            try:
+                scanned_dt = datetime.fromisoformat(last_scanned_str)
+                age = (datetime.now() - scanned_dt).total_seconds()
+                is_mem_fresh = (age < max_cache_age_sec)
+            except Exception:
+                is_mem_fresh = False
+
+        if is_mem_fresh:
+            return jsonify(mem_data)
+
+        # Check disk cache and file age
         disk_data = load_disk_cache(mode)
         if disk_data is not None:
+            file_path = os.path.join(CACHE_DIR, f"scan_{mode}.json")
+            file_mtime = os.path.getmtime(file_path) if os.path.exists(file_path) else 0
+            file_age = now_ts - file_mtime
+
+            # If disk cache is fresh, serve it immediately
+            if file_age < max_cache_age_sec:
+                SCAN_CACHE[mode]["data"] = disk_data
+                SCAN_CACHE[mode]["last_scanned"] = datetime.fromtimestamp(file_mtime).isoformat()
+                return jsonify(disk_data)
+            
+            # If disk cache is expired, serve stale data immediately while auto-refreshing in background
             SCAN_CACHE[mode]["data"] = disk_data
             if not SCAN_CACHE[mode]["is_scanning"]:
+                print(f"[{mode.upper()}] Cache expired (age: {file_age/60:.1f} mins). Triggering auto-refresh in background...")
                 threading.Thread(target=background_cache_worker, args=(mode,), daemon=True).start()
-            return jsonify(disk_data)
+            res = dict(disk_data)
+            res["is_updating"] = True
+            return jsonify(res)
+
         # If cold startup and already scanning, wait up to 10 seconds
         if SCAN_CACHE[mode]["is_scanning"]:
             for _ in range(20):
