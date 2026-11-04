@@ -416,6 +416,7 @@ MASTER_NSE_UNIVERSE = [
     {"symbol": "SAMMAANCAP", "name": "Sammaan Capital Ltd.", "sector": "Financial Services"},
     {"symbol": "MOTHERSON", "name": "Samvardhana Motherson International Ltd.", "sector": "Automobile and Auto Components"},
     {"symbol": "SANSERA", "name": "Sansera Engineering Ltd.", "sector": "Automobile and Auto Components"},
+    {"symbol": "SAREGAMA", "name": "Saregama India Ltd.", "sector": "Media Entertainment & Publication"},
     {"symbol": "SARDAEN", "name": "Sarda Energy and Minerals Ltd.", "sector": "Metals & Mining"},
     {"symbol": "SCHAEFFLER", "name": "Schaeffler India Ltd.", "sector": "Automobile and Auto Components"},
     {"symbol": "SCHNEIDER", "name": "Schneider Electric Infrastructure Ltd.", "sector": "Capital Goods"},
