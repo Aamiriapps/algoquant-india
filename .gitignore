@@ -7,6 +7,10 @@ __pycache__/
 cache/
 scratch/
 user_portfolio_analysis.json
+update_portfolio_user.py
+print_user_portfolio.py
+*portfolio_user*.py
+*.local.json
 
 # Logs
 *.log
