@@ -499,8 +499,8 @@ def fetch_stock_data(symbol: str, range_str: str = "1y", interval: str = "1d", f
     cache_key = f"{resolved}_{range_str}_{interval}"
     now_ts = time.time()
     
-    # Tier 1: In-Memory Hot Cache
-    ttl = 60.0 if interval in ["15m", "5m"] else 600.0
+    # Tier 1: In-Memory Hot Cache (TTL: 30s for intraday, 60s for daily)
+    ttl = 30.0 if interval in ["15m", "5m"] else 60.0
     if not force_network and cache_key in _OHLCV_MEM_CACHE:
         cached_df, cached_time = _OHLCV_MEM_CACHE[cache_key]
         if (now_ts - cached_time) < ttl:
@@ -542,15 +542,32 @@ def fetch_stock_data(symbol: str, range_str: str = "1y", interval: str = "1d", f
     # Tier 3: Process Network Success & Update Persistent Disk Cache
     disk_path = os.path.join(CACHE_OHLCV_DIR, f"{cache_key}.json")
     if raw_payload:
-        timestamps = raw_payload.get("timestamp", [])
+        timestamps = list(raw_payload.get("timestamp", []))
         indicators = raw_payload.get("indicators", {}).get("quote", [{}])[0]
+        opens = list(indicators.get("open", []))
+        highs = list(indicators.get("high", []))
+        lows = list(indicators.get("low", []))
+        closes = list(indicators.get("close", []))
+        volumes = list(indicators.get("volume", []))
+
+        # Synchronize real-time market price (regularMarketPrice) into the latest candle
+        meta = raw_payload.get("meta", {})
+        reg_price = meta.get("regularMarketPrice")
+        if reg_price is not None and isinstance(reg_price, (int, float)) and reg_price > 0 and len(closes) > 0:
+            reg_price = float(reg_price)
+            closes[-1] = reg_price
+            if len(highs) > 0 and highs[-1] is not None:
+                highs[-1] = max(float(highs[-1]), reg_price)
+            if len(lows) > 0 and lows[-1] is not None:
+                lows[-1] = min(float(lows[-1]), reg_price)
+
         cache_dict = {
             "timestamp": timestamps,
-            "open": indicators.get("open", []),
-            "high": indicators.get("high", []),
-            "low": indicators.get("low", []),
-            "close": indicators.get("close", []),
-            "volume": indicators.get("volume", [])
+            "open": opens,
+            "high": highs,
+            "low": lows,
+            "close": closes,
+            "volume": volumes
         }
         df = _build_dataframe_from_dict(cache_dict, range_str, interval)
         if not df.empty:

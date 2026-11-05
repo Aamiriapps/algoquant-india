@@ -88,6 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchScanData(false);
     fetchMarketStatus();
     setInterval(fetchMarketStatus, 45000);
+    setInterval(() => {
+        if (state.mode === 'portfolio') {
+            fetchPortfolioData(false);
+        }
+    }, 45000);
 });
 
 // Fetch Live Market Status & Benchmark Indices (Nifty 50, India VIX)

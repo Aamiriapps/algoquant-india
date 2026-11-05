@@ -340,7 +340,8 @@ def switch_active_portfolio(portfolio_id: str) -> dict:
 def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float = None, 
                          quantity: int = 0, buy_date: str = None, initial_sl: float = None, 
                          target1: float = None, target2: float = None,
-                         target3: float = None, target4: float = None) -> dict:
+                         target3: float = None, target4: float = None,
+                         force_network: bool = False) -> dict:
     """
     Performs comprehensive pro swing algorithmic analysis:
     - If is_bought=True: Exit / Trailing SL / Target status / PnL.
@@ -372,7 +373,7 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
     fetch_sym = ALIAS_MAP.get(clean_sym, clean_sym)
     meta = get_symbol_metadata(clean_sym)
     
-    df = fetch_stock_data(fetch_sym, range_str="1y", interval="1d")
+    df = fetch_stock_data(fetch_sym, range_str="1y", interval="1d", force_network=force_network)
     if df.empty or len(df) < 10:
         return {
             "symbol": clean_sym,
@@ -809,9 +810,11 @@ def analyze_entire_portfolio(portfolio_id: str = None, force_refresh: bool = Fal
 
     global PORTFOLIO_CACHE
     now_ts = time.time()
-    if not force_refresh and p_id in PORTFOLIO_CACHE:
+    if force_refresh:
+        PORTFOLIO_CACHE.pop(p_id, None)
+    elif p_id in PORTFOLIO_CACHE:
         cache_entry = PORTFOLIO_CACHE[p_id]
-        if now_ts - cache_entry.get("timestamp", 0) < 180.0:
+        if now_ts - cache_entry.get("timestamp", 0) < 30.0:
             cached_data = cache_entry.get("data")
             if cached_data:
                 cached_data["all_portfolios"] = get_all_portfolios_meta()
@@ -851,7 +854,8 @@ def analyze_entire_portfolio(portfolio_id: str = None, force_refresh: bool = Fal
                 target1=float(h.get("target1", 0)) if h.get("target1") else None,
                 target2=float(h.get("target2", 0)) if h.get("target2") else None,
                 target3=float(h.get("target3", 0)) if h.get("target3") else None,
-                target4=float(h.get("target4", 0)) if h.get("target4") else None
+                target4=float(h.get("target4", 0)) if h.get("target4") else None,
+                force_network=force_refresh
             ): h for h in holdings
         }
 
@@ -865,7 +869,8 @@ def analyze_entire_portfolio(portfolio_id: str = None, force_refresh: bool = Fal
                 target1=float(w.get("target1", 0)) if w.get("target1") else None,
                 target2=float(w.get("target2", 0)) if w.get("target2") else None,
                 target3=float(w.get("target3", 0)) if w.get("target3") else None,
-                target4=float(w.get("target4", 0)) if w.get("target4") else None
+                target4=float(w.get("target4", 0)) if w.get("target4") else None,
+                force_network=force_refresh
             ): w for w in watchlist
         }
 
