@@ -1103,6 +1103,11 @@ function initPortfolioModals() {
         inputExitPrice.addEventListener('input', updateExitPnlPreview);
     }
 
+    const inputExitShares = document.getElementById('input-exit-shares');
+    if (inputExitShares) {
+        inputExitShares.addEventListener('input', updateExitPnlPreview);
+    }
+
     const inputExitDate = document.getElementById('input-exit-date');
     if (inputExitDate) {
         inputExitDate.addEventListener('change', () => {
@@ -2649,13 +2654,23 @@ function openExitModal(id) {
     const holding = portfolioState.holdings.find(h => h.id === id);
     if (!holding) return;
 
+    const totalQty = parseInt(holding.quantity, 10) || 1;
+
     document.getElementById('exit-item-id').value = id;
     document.getElementById('exit-buy-price').value = holding.buy_price;
-    document.getElementById('exit-qty').value = holding.quantity;
+    document.getElementById('exit-qty').value = totalQty;
 
     document.getElementById('exit-symbol-label').textContent = holding.symbol;
-    document.getElementById('exit-qty-label').textContent = `${holding.quantity} shares`;
+    document.getElementById('exit-qty-label').textContent = `${totalQty} shares`;
     document.getElementById('exit-buy-label').textContent = `₹${holding.buy_price}`;
+
+    const inputExitShares = document.getElementById('input-exit-shares');
+    if (inputExitShares) {
+        inputExitShares.max = totalQty;
+        inputExitShares.value = totalQty; // Default to full exit
+    }
+    const hintEl = document.getElementById('exit-total-shares-hint');
+    if (hintEl) hintEl.textContent = totalQty;
 
     document.getElementById('input-exit-price').value = holding.current_price;
     document.getElementById('input-exit-date').value = new Date().toISOString().split('T')[0];
@@ -2670,24 +2685,40 @@ function openExitModal(id) {
     modal.classList.remove('hidden');
 }
 
-// Live calculation in Exit Modal
+// Live calculation in Exit Modal (supports partial exit shares)
 function updateExitPnlPreview() {
     const buyPrice = parseFloat(document.getElementById('exit-buy-price').value) || 0;
-    const qty = parseInt(document.getElementById('exit-qty').value, 10) || 0;
+    const totalQty = parseInt(document.getElementById('exit-qty').value, 10) || 0;
+    const inputShares = document.getElementById('input-exit-shares');
+    let sellQty = inputShares ? parseInt(inputShares.value, 10) : totalQty;
+    if (isNaN(sellQty) || sellQty <= 0) sellQty = totalQty;
+    if (sellQty > totalQty) sellQty = totalQty;
+
     const exitPrice = parseFloat(document.getElementById('input-exit-price').value) || 0;
 
-    const pnl = (exitPrice - buyPrice) * qty;
+    const pnl = (exitPrice - buyPrice) * sellQty;
     const pnlPct = buyPrice > 0 ? ((exitPrice - buyPrice) / buyPrice) * 100 : 0;
     const isGain = pnl >= 0;
 
+    const typeLabel = document.getElementById('exit-sell-type-label');
+    if (typeLabel) {
+        if (sellQty < totalQty) {
+            typeLabel.textContent = `(Partial Exit: Selling ${sellQty}, Retaining ${totalQty - sellQty})`;
+            typeLabel.className = 'text-amber font-bold';
+        } else {
+            typeLabel.textContent = `(Full Exit: Selling all ${totalQty})`;
+            typeLabel.className = 'text-cyan font-bold';
+        }
+    }
+
     const display = document.getElementById('exit-pnl-display');
     if (display) {
-        display.textContent = `${isGain ? '+' : ''}₹${pnl.toLocaleString('en-IN', { maximumFractionDigits: 2 })} (${isGain ? '+' : ''}${pnlPct.toFixed(2)}%)`;
+        display.textContent = `${isGain ? '+' : ''}₹${pnl.toLocaleString('en-IN', { maximumFractionDigits: 2 })} (${isGain ? '+' : ''}${pnlPct.toFixed(2)}%) for ${sellQty} shs`;
         display.className = `exit-pnl-val ${isGain ? 'text-green' : 'text-red'}`;
     }
 }
 
-// Confirm Exit Trade & Move to Journal
+// Confirm Exit Trade & Move to Journal (supports partial exit)
 async function handleConfirmExitTrade(e) {
     e.preventDefault();
     const id = document.getElementById('exit-item-id').value;
@@ -2696,10 +2727,21 @@ async function handleConfirmExitTrade(e) {
     const reason = document.getElementById('select-exit-reason').value;
     const holdDaysInput = document.getElementById('input-exit-hold-days');
     const holdDays = (holdDaysInput && holdDaysInput.value.trim() !== '') ? parseInt(holdDaysInput.value, 10) : null;
+    const totalQty = parseInt(document.getElementById('exit-qty').value, 10) || 1;
+    const inputShares = document.getElementById('input-exit-shares');
+    const exitQty = inputShares ? parseInt(inputShares.value, 10) : totalQty;
     const modal = document.getElementById('close-trade-modal');
 
     if (!exitPrice || exitPrice <= 0) {
         alert('Please enter a valid exit price.');
+        return;
+    }
+    if (!exitQty || exitQty <= 0) {
+        alert('Please enter a valid quantity to sell.');
+        return;
+    }
+    if (exitQty > totalQty) {
+        alert(`Cannot sell ${exitQty} shares. You only own ${totalQty} shares.`);
         return;
     }
 
@@ -2713,6 +2755,7 @@ async function handleConfirmExitTrade(e) {
                 exit_date: exitDate,
                 exit_reason: reason,
                 hold_days: holdDays,
+                exit_qty: exitQty,
                 portfolio_id: portfolioState.activePortfolioId
             })
         });
@@ -2724,7 +2767,14 @@ async function handleConfirmExitTrade(e) {
         }
 
         modal.classList.add('hidden');
-        document.getElementById('subtab-history').click();
+        if (typeof showNotification === 'function') {
+            showNotification(res.message || 'Exit trade recorded successfully!', 'success');
+        }
+        if (res.is_partial) {
+            document.getElementById('subtab-holdings').click();
+        } else {
+            document.getElementById('subtab-history').click();
+        }
         fetchPortfolioData(false);
     } catch (err) {
         console.error('Exit Trade Error:', err);

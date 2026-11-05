@@ -1406,10 +1406,13 @@ def delete_portfolio_item(item_type: str, item_id: str, portfolio_id: str = None
         return {"success": True, "message": "Deleted successfully."}
     return {"error": f"Item {item_id} not found."}
 
-def close_trade_and_log(item_id: str, exit_price: float, exit_date: str = None, exit_reason: str = "", hold_days: int = None, portfolio_id: str = None) -> dict:
+def close_trade_and_log(item_id: str, exit_price: float, exit_date: str = None, exit_reason: str = "", hold_days: int = None, portfolio_id: str = None, exit_qty: int = None) -> dict:
     """
-    Exits a holding and moves it to the Trade History Journal.
-    Calculates realized PnL, percentage return, and hold duration (unbounded, can be any number of days).
+    Exits a holding (full or partial) and moves it to the Trade History Journal.
+    If exit_qty < total shares, performs a partial exit:
+      - Logs exit_qty shares to history with realized PnL.
+      - Retains remaining shares in active holdings.
+    If exit_qty >= total shares (or omitted), performs a full exit.
     """
     data = load_portfolio_data()
     target_holding = None
@@ -1436,7 +1439,16 @@ def close_trade_and_log(item_id: str, exit_price: float, exit_date: str = None, 
         return {"error": f"Holding with id {item_id} not found."}
 
     buy_price = float(target_holding["buy_price"])
-    qty = int(target_holding["quantity"])
+    current_total_qty = int(target_holding["quantity"])
+
+    # Determine exit quantity (partial vs full)
+    if exit_qty is not None and int(exit_qty) > 0:
+        sold_qty = min(int(exit_qty), current_total_qty)
+    else:
+        sold_qty = current_total_qty
+
+    remaining_qty = current_total_qty - sold_qty
+
     buy_date_str = target_holding.get("buy_date", datetime.now().strftime("%Y-%m-%d"))
     exit_date_str = exit_date or datetime.now().strftime("%Y-%m-%d")
 
@@ -1452,9 +1464,13 @@ def close_trade_and_log(item_id: str, exit_price: float, exit_date: str = None, 
         except Exception:
             duration_days = 0
 
-    realized_pnl = round((exit_price - buy_price) * qty, 2)
+    realized_pnl = round((exit_price - buy_price) * sold_qty, 2)
     return_pct = round(((exit_price - buy_price) / buy_price) * 100.0, 2) if buy_price > 0 else 0.0
     is_win = realized_pnl > 0
+
+    clean_reason = exit_reason or ("Stop Loss hit" if not is_win else "Target reached / Pro Trailing exit")
+    if remaining_qty > 0 and "partial" not in clean_reason.lower():
+        clean_reason = f"{clean_reason} [Partial: {sold_qty} sold, {remaining_qty} retained]"
 
     history_record = {
         "id": str(uuid.uuid4())[:8],
@@ -1462,19 +1478,29 @@ def close_trade_and_log(item_id: str, exit_price: float, exit_date: str = None, 
         "name": target_holding["name"],
         "buy_price": buy_price,
         "exit_price": round(exit_price, 2),
-        "quantity": qty,
+        "quantity": sold_qty,
+        "total_before_exit": current_total_qty,
+        "remaining_quantity": remaining_qty,
+        "is_partial": remaining_qty > 0,
         "buy_date": buy_date_str,
         "exit_date": exit_date_str,
         "hold_days": duration_days,
         "realized_pnl": realized_pnl,
         "return_pct": return_pct,
         "is_win": is_win,
-        "exit_reason": exit_reason or ("Stop Loss hit" if not is_win else "Target reached / Pro Trailing exit"),
+        "exit_reason": clean_reason,
         "notes": target_holding.get("notes", "")
     }
 
-    # Remove from holdings and append to history of target portfolio
-    target_p["holdings"] = [h for h in target_p.get("holdings", []) if h["id"] != item_id]
+    # If partial exit, update remaining quantity in active holdings
+    # If full exit, remove from active holdings
+    if remaining_qty > 0:
+        target_holding["quantity"] = remaining_qty
+        message = f"Partially exited {sold_qty} shares of {target_holding['symbol']}! {remaining_qty} shares retained in portfolio."
+    else:
+        target_p["holdings"] = [h for h in target_p.get("holdings", []) if h["id"] != item_id]
+        message = f"Fully exited {sold_qty} shares of {target_holding['symbol']} and logged to Trade Journal."
+
     if "history" not in target_p:
         target_p["history"] = []
     target_p["history"].insert(0, history_record)
@@ -1483,6 +1509,9 @@ def close_trade_and_log(item_id: str, exit_price: float, exit_date: str = None, 
 
     return {
         "success": True,
-        "message": f"Trade closed for {target_holding['symbol']} in '{target_p['name']}'! Realized P&L: ₹{realized_pnl:+,.2f} ({return_pct:+.2f}%) recorded to Trade Journal.",
+        "message": message,
+        "is_partial": remaining_qty > 0,
+        "sold_quantity": sold_qty,
+        "remaining_quantity": remaining_qty,
         "record": history_record
     }

@@ -576,7 +576,7 @@ def api_delete_portfolio_item():
 
 @app.route("/api/portfolio/close_trade", methods=["POST"])
 def api_close_trade():
-    """Exits a holding and logs it into the historical Trade Journal."""
+    """Exits a holding (full or partial) and logs it into the historical Trade Journal."""
     req = request.get_json() or {}
     item_id = req.get("id")
     exit_price = float(req.get("exit_price", 0.0))
@@ -584,6 +584,15 @@ def api_close_trade():
     exit_reason = req.get("exit_reason", "")
     hold_days = req.get("hold_days")
     portfolio_id = req.get("portfolio_id") or request.args.get("portfolio_id")
+    exit_qty = req.get("exit_qty")
+    if exit_qty is not None and str(exit_qty).strip() != "":
+        try:
+            exit_qty = int(exit_qty)
+        except ValueError:
+            exit_qty = None
+    else:
+        exit_qty = None
+
     if hold_days is not None and str(hold_days).strip() != "":
         try:
             hold_days = int(hold_days)
@@ -595,7 +604,15 @@ def api_close_trade():
     if not item_id or exit_price <= 0:
         return jsonify({"error": "Valid Item ID and Exit Price are required"}), 400
         
-    res = close_trade_and_log(item_id, exit_price, exit_date, exit_reason, hold_days=hold_days, portfolio_id=portfolio_id)
+    res = close_trade_and_log(
+        item_id,
+        exit_price,
+        exit_date,
+        exit_reason,
+        hold_days=hold_days,
+        portfolio_id=portfolio_id,
+        exit_qty=exit_qty
+    )
     if "error" in res:
         return jsonify(res), 400
     return jsonify(res)

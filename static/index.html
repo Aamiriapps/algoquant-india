@@ -831,31 +831,40 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Exit Price (₹) <span class="text-red">*</span></label>
-                            <input type="number" id="input-exit-price" step="0.05" required>
+                            <label>Shares to Sell <span class="text-cyan font-bold" id="exit-sell-type-label">(Full Exit)</span></label>
+                            <input type="number" id="input-exit-shares" min="1" step="1" required placeholder="Enter number of shares to exit">
+                            <small style="color:var(--text-muted); font-size:0.75rem; margin-top:0.25rem; display:block;">
+                                Total held: <span id="exit-total-shares-hint" class="font-bold">--</span> shares. Enter less than total for partial exit.
+                            </small>
                         </div>
                         <div class="form-group">
-                            <label>Exit Date</label>
-                            <input type="date" id="input-exit-date" required>
+                            <label>Exit Price (₹) <span class="text-red">*</span></label>
+                            <input type="number" id="input-exit-price" step="0.05" required>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
+                            <label>Exit Date</label>
+                            <input type="date" id="input-exit-date" required>
+                        </div>
+                        <div class="form-group">
                             <label>Duration / Hold Days <span class="text-muted">(Any number)</span></label>
                             <input type="number" id="input-exit-hold-days" min="0" placeholder="Auto-calculated, or enter any days">
                         </div>
-                        <div class="form-group">
-                            <label>Reason for Exit</label>
-                            <select id="select-exit-reason">
-                                <option value="Supertrend Asking to Sell (Trend Breakdown)">Supertrend Asking to Sell (Trend Breakdown)</option>
-                                <option value="Price Action High Reached (Swing Target Hit)">Price Action High Reached (Swing Target Hit)</option>
-                                <option value="All-Time High / 52W High Reached (ATH Peak)">All-Time High / 52W High Reached (ATH Peak)</option>
-                                <option value="Supertrend Trailing Stop-Loss Triggered">Supertrend Trailing Stop-Loss Triggered</option>
-                                <option value="Target 1 Hit - Booked Profits">Target 1 Hit - Booked Profits</option>
-                                <option value="Manual Exit - Capital Reallocation">Manual Exit - Capital Reallocation</option>
-                            </select>
-                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label>Reason for Exit</label>
+                        <select id="select-exit-reason">
+                            <option value="Partial Profit Booking at Resistance">Partial Profit Booking at Resistance</option>
+                            <option value="Supertrend Asking to Sell (Trend Breakdown)">Supertrend Asking to Sell (Trend Breakdown)</option>
+                            <option value="Price Action High Reached (Swing Target Hit)">Price Action High Reached (Swing Target Hit)</option>
+                            <option value="All-Time High / 52W High Reached (ATH Peak)">All-Time High / 52W High Reached (ATH Peak)</option>
+                            <option value="Supertrend Trailing Stop-Loss Triggered">Supertrend Trailing Stop-Loss Triggered</option>
+                            <option value="Target 1 Hit - Booked Profits">Target 1 Hit - Booked Profits</option>
+                            <option value="Manual Exit - Capital Reallocation">Manual Exit - Capital Reallocation</option>
+                        </select>
                     </div>
 
                     <div class="exit-preview-pnl" id="exit-pnl-preview">
