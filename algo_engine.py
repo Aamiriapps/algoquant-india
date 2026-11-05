@@ -1107,19 +1107,29 @@ def run_full_scan(mode: str = "daily", days_lookback: int = 14, bars_lookback: i
     if mode == "daily" and buy_only:
         all_signals = [s for s in all_signals if s.get("signal_type") == "BUY"]
     
-    # Sort signals: Actionable first, highest confidence score first, then freshest
+    # Sort signals: Actionable first, freshest trigger (days_ago/bars_ago ascending), highest confidence score
     sort_key = "days_ago" if mode == "daily" else "bars_ago"
     all_signals.sort(key=lambda x: (
         not x["is_actionable"],
-        -x.get("confidence_score", 0),
         x.get(sort_key, 0),
+        -x.get("confidence_score", 0),
         -abs(x.get("pct_from_trigger", 0))
     ))
     
+    # Deduplicate by symbol: Ensure each stock appears strictly ONCE with its most relevant/freshest setup
+    deduped_signals = []
+    seen_symbols = set()
+    for s in all_signals:
+        sym = s.get("symbol")
+        if sym and sym not in seen_symbols:
+            seen_symbols.add(sym)
+            deduped_signals.append(s)
+    all_signals = deduped_signals
+
     actionable_buys = [s for s in all_signals if s["is_actionable"] and s["signal_type"] == "BUY"]
     actionable_sells = [s for s in all_signals if s["is_actionable"] and s["signal_type"] == "SELL"]
     not_suitable = [s for s in all_signals if not s["is_actionable"]]
-    pro_picks = [s for s in all_signals if s["is_actionable"] and s["enhanced_option"]["vol_confirmed"]]
+    pro_picks = [s for s in all_signals if s["is_actionable"] and s.get("enhanced_option", {}).get("vol_confirmed", False)]
     elite_picks = [s for s in all_signals if s["is_actionable"] and s.get("confidence_score", 0) >= 6]
     
     return {

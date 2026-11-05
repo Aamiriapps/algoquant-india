@@ -366,6 +366,14 @@ function renderSignals() {
 
     let filtered = [...state.signals];
 
+    // Defensive deduplication by symbol: exactly 1 card per stock
+    const seenSymbols = new Set();
+    filtered = filtered.filter(s => {
+        if (!s.symbol || seenSymbols.has(s.symbol)) return false;
+        seenSymbols.add(s.symbol);
+        return true;
+    });
+
     // Filter by Strategy Tab (Enhanced Pro vs Core)
     if (state.activeTab === 'enhanced') {
         filtered = filtered.filter(s => s.enhanced_option.vol_confirmed);
