@@ -87,12 +87,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initEventListeners();
     fetchScanData(false);
     fetchMarketStatus();
-    setInterval(fetchMarketStatus, 45000);
-    setInterval(() => {
-        if (state.mode === 'portfolio') {
-            fetchPortfolioData(false);
-        }
-    }, 45000);
 });
 
 // Fetch Live Market Status & Benchmark Indices (Nifty 50, India VIX)
@@ -341,10 +335,9 @@ async function fetchScanData(forceRefresh = false) {
 
         renderSignals();
 
-        // If background worker is currently updating, smoothly schedule refresh
+        // If background worker is currently updating, show indicator without auto-refresh loop
         if (data.is_updating) {
-            el.btnRefresh.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-cyan"></i> Updating in background...';
-            setTimeout(() => { fetchScanData(false); }, 6000);
+            el.btnRefresh.innerHTML = '<i class="fa-solid fa-circle-notch text-cyan"></i> Scan Updating (Click to Reload)';
         }
     } catch (err) {
         console.error('Scan Error:', err);

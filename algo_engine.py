@@ -238,6 +238,7 @@ LIQUID_UNIVERSE = [
     {"symbol": "AARTIIND", "name": "Aarti Industries Ltd", "sector": "Specialty Chemicals"},
     {"symbol": "ATUL", "name": "Atul Ltd", "sector": "Specialty Chemicals"},
     {"symbol": "COROMANDEL", "name": "Coromandel International Ltd", "sector": "Fertilizers / Agri"},
+    {"symbol": "CORONA", "name": "Corona Remedies Ltd.", "sector": "Healthcare"},
     {"symbol": "CHAMBLFERT", "name": "Chambal Fertilisers and Chemicals", "sector": "Fertilizers"},
     {"symbol": "FACT", "name": "Fertilisers & Chemicals Travancore", "sector": "Fertilizers / Chemicals"},
     {"symbol": "SUMICHEM", "name": "Sumitomo Chemical India Ltd", "sector": "Agro Chemicals"},

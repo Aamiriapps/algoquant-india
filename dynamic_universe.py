@@ -141,6 +141,7 @@ MASTER_NSE_UNIVERSE = [
     {"symbol": "CONCORDBIO", "name": "Concord Biotech Ltd.", "sector": "Healthcare"},
     {"symbol": "CONCOR", "name": "Container Corporation of India Ltd.", "sector": "Services"},
     {"symbol": "COROMANDEL", "name": "Coromandel International Ltd.", "sector": "Chemicals"},
+    {"symbol": "CORONA", "name": "Corona Remedies Ltd.", "sector": "Healthcare"},
     {"symbol": "CRAFTSMAN", "name": "Craftsman Automation Ltd.", "sector": "Automobile and Auto Components"},
     {"symbol": "CREDITACC", "name": "CreditAccess Grameen Ltd.", "sector": "Financial Services"},
     {"symbol": "CROMPTON", "name": "Crompton Greaves Consumer Electricals Ltd.", "sector": "Consumer Durables"},

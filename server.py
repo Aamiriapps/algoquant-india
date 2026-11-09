@@ -673,22 +673,6 @@ def get_free_port(default_port=5000):
                 continue
     return default_port
 
-def background_portfolio_refresher():
-    """Periodically refreshes active portfolio holdings every 60s in background so live quotes never lag."""
-    time.sleep(5)
-    while True:
-        try:
-            data = load_portfolio_data()
-            portfolios = data.get("portfolios", [])
-            for p in portfolios:
-                pid = p.get("id")
-                holdings = p.get("holdings", [])
-                if pid and holdings:
-                    analyze_entire_portfolio(portfolio_id=pid, force_refresh=True)
-            time.sleep(60)
-        except Exception as e:
-            time.sleep(30)
-
 if __name__ == "__main__":
     port = get_free_port(5000)
     
@@ -709,14 +693,11 @@ if __name__ == "__main__":
         print(f"Server starting on http://localhost:{port} ...")
     
     # Pre-warm Daily and Intraday scans concurrently in background threads
-    print("[1/3] Launching Daily 50 EMA scan across Nifty 500 stocks in background...")
+    print("[1/2] Launching Daily 50 EMA scan across Nifty 500 stocks in background...")
     threading.Thread(target=background_cache_worker, args=("daily",), daemon=True).start()
     
-    print("[2/3] Launching Intraday 200 EMA scan in background...")
+    print("[2/2] Launching Intraday 200 EMA scan in background...")
     threading.Thread(target=background_cache_worker, args=("intraday",), daemon=True).start()
-
-    print("[3/3] Launching Live Portfolio Auto-Refresher in background...")
-    threading.Thread(target=background_portfolio_refresher, daemon=True).start()
     
     print(f"\nServer ready! Open in browser: http://localhost:{port}")
     print("Press Ctrl+C in this console window anytime to stop the server.\n")
