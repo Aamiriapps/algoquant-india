@@ -502,8 +502,12 @@ function createSignalCard(s) {
                 </span>
             </div>
             <div class="m-item">
-                <span class="m-label">Stop-Loss (SL)</span>
+                <span class="m-label">Stop-Loss (Supertrend)</span>
                 <span class="m-val text-red">₹${s.stop_loss.toLocaleString('en-IN', {minimumFractionDigits: 2})} (-${s.risk_pct}%)</span>
+                <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">
+                    <span style="color:var(--accent-gold); font-weight:700;"><i class="fa-solid fa-shield-halved"></i> 5% Rule SL:</span>
+                    <strong style="color:#fff;">₹${(s.sl_5pct || (s.current_price * 0.95)).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong>
+                </div>
             </div>
             <div class="m-item">
                 <span class="m-label">Target 1 (1:1.5)</span>
@@ -1571,10 +1575,14 @@ function renderTradePlanStrip(plan, isBought = true) {
             <div class="trade-plan-grid">
                 <!-- Stop Loss -->
                 <div class="tp-card tp-card-sl">
-                    <div class="tp-card-badge tp-badge-sl"><i class="fa-solid fa-shield-halved"></i> SL</div>
+                    <div class="tp-card-badge tp-badge-sl"><i class="fa-solid fa-shield-halved"></i> SL (Supertrend)</div>
                     <div class="tp-card-price text-red">₹${formatNum(sl.price)}</div>
-                    <div class="tp-card-sub text-red">-${sl.dist_pct || 0}% (${sl.label || 'Stop-Loss'})</div>
-                    ${sl.open_risk_amt != null ? `<div class="tp-card-profit text-red">Risk: ₹${formatNum(sl.open_risk_amt)}</div>` : ''}
+                    <div class="tp-card-sub text-red">-${sl.dist_pct || 0}% (${sl.label || 'Supertrend SL'})</div>
+                    <div style="margin-top:6px; padding-top:4px; border-top:1px dashed rgba(255,255,255,0.15); font-size:0.75rem; color:var(--text-secondary); line-height:1.2;">
+                        <span style="color:var(--accent-gold); font-weight:700;"><i class="fa-solid fa-shield-halved"></i> 5% Rule SL:</span>
+                        <strong style="color:#fff;">₹${formatNum(sl.sl_5pct || (plan.entry_price * 0.95))}</strong>
+                    </div>
+                    ${sl.open_risk_amt != null ? `<div class="tp-card-profit text-red" style="margin-top:3px;">Risk: ₹${formatNum(sl.open_risk_amt)}</div>` : ''}
                 </div>
 
                 <!-- Target 1 (1.5R) -->
@@ -1719,6 +1727,10 @@ function renderHoldings() {
                             ₹${h.trailing_sl.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                             <small style="font-size:0.7rem; font-weight:700;">(${h.supertrend_dir === 1 ? 'Bullish' : 'SELL SIGNAL'})</small>
                         </span>
+                        <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:3px;">
+                            <span style="color:var(--accent-gold); font-weight:700;"><i class="fa-solid fa-shield-halved"></i> 5% Rule SL:</span>
+                            <strong style="color:#fff;">₹${((h.sl_5pct || (h.current_price * 0.95))).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong>
+                        </div>
                     </div>
                     <div class="p-metric-item">
                         <span class="p-m-lbl">Price Action High / ATH</span>
@@ -2035,6 +2047,10 @@ function renderWatchlist() {
                     <div class="p-metric-item">
                         <span class="p-m-lbl">Supertrend SL</span>
                         <span class="p-m-val text-red">₹${w.suggested_sl} (-${w.risk_pct}%)</span>
+                        <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">
+                            <span style="color:var(--accent-gold); font-weight:700;"><i class="fa-solid fa-shield-halved"></i> 5% Rule SL:</span>
+                            <strong style="color:#fff;">₹${((w.sl_5pct || (w.current_price * 0.95))).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong>
+                        </div>
                     </div>
                     <div class="p-metric-item highlight-box">
                         <span class="p-m-lbl">Target: PA High / ATH</span>
@@ -2459,6 +2475,10 @@ async function runQuickAnalysis() {
                 <div class="preview-stat">
                     <div class="preview-stat-label">${isBought ? 'Supertrend Trailing SL' : 'Supertrend Suggested SL'}</div>
                     <div class="preview-stat-val text-red">₹${isBought ? data.trailing_sl : data.suggested_sl}</div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:3px;">
+                        <span style="color:var(--accent-gold); font-weight:700;"><i class="fa-solid fa-shield-halved"></i> 5% Rule SL:</span>
+                        <strong style="color:#fff;">₹${((data.sl_5pct || (data.current_price * 0.95))).toFixed(2)}</strong>
+                    </div>
                 </div>
                 <div class="preview-stat">
                     <div class="preview-stat-label">Price Action High</div>

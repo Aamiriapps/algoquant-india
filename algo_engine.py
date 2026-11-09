@@ -743,6 +743,7 @@ def analyze_daily_stock(item: dict, days_lookback: int = 14) -> list:
         reasons             = []
         action_plan         = ""
         
+        sl_5pct = round(curr_close * 0.95, 2) if sig_type == "BUY" else round(curr_close * 1.05, 2)
         if sig_type == "BUY":
             stop_loss      = round(min(curr_st, curr_ema50 - 0.5 * curr_atr), 2)
             risk_per_share = max(curr_close - stop_loss, 0.01)
@@ -791,13 +792,13 @@ def analyze_daily_stock(item: dict, days_lookback: int = 14) -> list:
                     reasons.append(f"Prime Entry Window: Triggered {days_ago} day(s) ago — optimal buffer (+{pct_from_trigger:.1f}%).")
                 else:
                     reasons.append(f"Pullback Retest: Holding safely above 50 EMA support (+{pct_from_ema50:.1f}%).")
-                reasons.append(f"Risk: {risk_pct:.1f}% to SL ₹{stop_loss:.2f} | Confidence: {confidence_score}/7 filters ✓")
+                reasons.append(f"Risk: {risk_pct:.1f}% to Supertrend SL ₹{stop_loss:.2f}. As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}.")
                 if not f1_adx_trend:
                     reasons.append("⚠ ADX < 20: Trend strength is weak. Reduce position size by 50%.")
                 if not f6_momentum:
                     reasons.append("⚠ ROC negative: Stock not outperforming market — consider skipping.")
                 action_plan = (f"Actionable Buy: Enter at CMP ₹{curr_close:.2f}. "
-                               f"SL: ₹{stop_loss:.2f} | T1: ₹{target1:.2f} (1.5R) | T2: ₹{target2:.2f} (2.5R) | T3: ₹{target3:.2f} (4R extended). "
+                               f"Supertrend SL: ₹{stop_loss:.2f} | 5% Rule SL: ₹{sl_5pct:.2f} | T1: ₹{target1:.2f} (1.5R) | T2: ₹{target2:.2f} (2.5R). "
                                f"Risk ₹{risk_per_share:.2f}/share. Use 1% capital risk rule.")
                 
         else:  # SELL / SHORT
@@ -864,6 +865,8 @@ def analyze_daily_stock(item: dict, days_lookback: int = 14) -> list:
             "pct_from_trigger": round(pct_from_trigger, 2),
             "pct_from_ema":  round(pct_from_ema50, 2),
             "stop_loss":     stop_loss,
+            "sl_5pct":       sl_5pct,
+            "sl_rule_5pct_text": f"As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}",
             "risk_pct":      round(risk_pct, 2),
             "target1":       target1,
             "target2":       target2,
@@ -967,6 +970,7 @@ def analyze_intraday_stock(item: dict, bars_lookback: int = 25, interval: str = 
         reasons = []
         action_plan = ""
         
+        sl_5pct = round(curr_close * 0.95, 2) if sig_type == "BUY" else round(curr_close * 1.05, 2)
         # Intraday Stop Loss: Supertrend line or 200 EMA
         if sig_type == "BUY":
             stop_loss = round(min(curr_st, curr_ema200), 2)
@@ -1057,6 +1061,8 @@ def analyze_intraday_stock(item: dict, bars_lookback: int = 25, interval: str = 
             "pct_from_trigger": round(pct_from_trigger, 2),
             "pct_from_ema": round(pct_from_ema200, 2),
             "stop_loss": stop_loss,
+            "sl_5pct": sl_5pct,
+            "sl_rule_5pct_text": f"As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}",
             "risk_pct": round(risk_pct, 2),
             "target1": target1,
             "target2": target2,

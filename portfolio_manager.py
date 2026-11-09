@@ -417,6 +417,7 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
         
     dist_to_swing_high_pct = round(((swing_high - curr_close) / curr_close) * 100.0, 2)
     dist_to_ath_pct = round(((high_52w - curr_close) / curr_close) * 100.0, 2)
+    sl_5pct = round(curr_close * 0.95, 2)
 
     base_result = {
         "symbol": clean_sym,
@@ -424,6 +425,8 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
         "sector": meta["sector"],
         "is_bought": is_bought,
         "current_price": round(curr_close, 2),
+        "sl_5pct": sl_5pct,
+        "sl_rule_5pct_text": f"As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}",
         "day_change_pct": day_change_pct,
         "ema50": round(curr_ema50, 2),
         "ema200": round(curr_ema200, 2),
@@ -520,7 +523,9 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
                 "dist_pct": sl_distance_pct,
                 "risk_per_share": round(r_unit, 2),
                 "open_risk_amt": open_risk_amt,
-                "label": "Trailing SL" if curr_st_dir == 1 else "Stop-Loss"
+                "label": "Trailing SL" if curr_st_dir == 1 else "Stop-Loss",
+                "sl_5pct": sl_5pct,
+                "sl_rule_5pct_text": f"As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}"
             },
             "t1": {
                 "price": final_t1,
@@ -604,8 +609,9 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
             urgency = "HOLD"
             reasons.append(f"Price (₹{curr_close:.2f}) is trading above Daily 50 EMA (₹{curr_ema50:.2f}) with Bullish (Green) Supertrend trailing at ₹{curr_st:.2f}.")
             reasons.append(f"Targeting {goal_label} at ₹{target_goal:.2f} (needs +{dist_to_goal}% move).")
+            reasons.append(f"As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}.")
             reasons.append("Supertrend has NOT asked to sell. Continue to ride the trend.")
-            action_plan = f"HOLD with Trailing Stop-Loss at Supertrend (₹{sl_price:.2f}). Planning Targets: T1 ₹{final_t1:.2f} | T2 ₹{final_t2:.2f} | T3 ₹{final_t3:.2f} | T4 ₹{final_t4:.2f}."
+            action_plan = f"HOLD with Trailing Stop-Loss at Supertrend (₹{sl_price:.2f}). As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}. Planning Targets: T1 ₹{final_t1:.2f} | T2 ₹{final_t2:.2f} | T3 ₹{final_t3:.2f} | T4 ₹{final_t4:.2f}."
 
         return {
             **base_result,
@@ -693,7 +699,9 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
                 "dist_pct": round(((curr_close - suggested_sl) / curr_close) * 100.0, 2),
                 "risk_per_share": risk_per_share,
                 "open_risk_amt": round(risk_per_share * rec_shares, 2),
-                "label": "Supertrend SL" if curr_st_dir == 1 else "Stop-Loss"
+                "label": "Supertrend SL" if curr_st_dir == 1 else "Stop-Loss",
+                "sl_5pct": sl_5pct,
+                "sl_rule_5pct_text": f"As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}"
             },
             "t1": {
                 "price": final_t1,
@@ -763,7 +771,8 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
             reasons.append(f"🚀 Blue Sky Momentum Breakout: Trading at All-Time High / 52-Week High (₹{high_52w:.2f}).")
             reasons.append(f"Supertrend is Bullish Green at ₹{curr_st:.2f}. Stock has entered price discovery with zero overhead resistance.")
             reasons.append(f"Volume conviction ratio is {vol_surge_x}x. High-velocity institutional momentum setup.")
-            action_plan = f"BUY MOMENTUM at ₹{curr_close:.2f}. Set Stop-Loss at Supertrend (₹{suggested_sl:.2f}, -{risk_pct:.1f}%). Targets: T1 ₹{final_t1:.2f} | T2 ₹{final_t2:.2f} | T3 ₹{final_t3:.2f} | T4 ₹{final_t4:.2f}. Trail stop-loss along Supertrend and let winner run."
+            reasons.append(f"As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}.")
+            action_plan = f"BUY MOMENTUM at ₹{curr_close:.2f}. Set Stop-Loss at Supertrend (₹{suggested_sl:.2f}, -{risk_pct:.1f}%). (5% Rule SL: ₹{sl_5pct:.2f}). Targets: T1 ₹{final_t1:.2f} | T2 ₹{final_t2:.2f} | T3 ₹{final_t3:.2f} | T4 ₹{final_t4:.2f}. Trail stop-loss along Supertrend and let winner run."
 
         # Rule 4: Actionable Buy Setup (Standard Swing: Price above Daily 50 EMA + Supertrend Green)
         else:
@@ -773,7 +782,8 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
             reasons.append(f"Long Swing Criteria Met: Daily Close (₹{curr_close:.2f}) is above 50 EMA (₹{curr_ema50:.2f}).")
             reasons.append(f"Supertrend (10, 3) is Bullish Green at ₹{curr_st:.2f} (active trend support).")
             reasons.append(f"Favorable upside to Price Action High (₹{swing_high:.2f}, +{dist_to_swing_high_pct}%) and ATH (₹{high_52w:.2f}, +{dist_to_ath_pct}%).")
-            action_plan = f"BUY at ₹{curr_close:.2f}. Set Stop-Loss at Supertrend (₹{suggested_sl:.2f}, -{risk_pct:.1f}%). Targets: T1 ₹{final_t1:.2f} | T2 ₹{final_t2:.2f} | T3 ₹{final_t3:.2f} | T4 ₹{final_t4:.2f}. Exit when Supertrend turns Red or targets are achieved."
+            reasons.append(f"As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}.")
+            action_plan = f"BUY at ₹{curr_close:.2f}. Set Stop-Loss at Supertrend (₹{suggested_sl:.2f}, -{risk_pct:.1f}%). (5% Rule SL: ₹{sl_5pct:.2f}). Targets: T1 ₹{final_t1:.2f} | T2 ₹{final_t2:.2f} | T3 ₹{final_t3:.2f} | T4 ₹{final_t4:.2f}. Exit when Supertrend turns Red or targets are achieved."
 
         return {
             **base_result,
@@ -783,6 +793,8 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
             "suggested_entry_price": round(curr_close, 2),
             "suggested_sl": suggested_sl,
             "stop_loss": suggested_sl,
+            "sl_5pct": sl_5pct,
+            "sl_rule_5pct_text": f"As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}",
             "risk_per_share": risk_per_share,
             "risk_pct": risk_pct,
             "target1": final_t1,
