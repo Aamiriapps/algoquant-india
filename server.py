@@ -632,20 +632,27 @@ def api_export_history_csv():
     writer.writerow([
         "Symbol", "Company Name", "Buy Date", "Exit Date", "Hold Duration (Days)",
         "Buy Price (₹)", "Exit Price (₹)", "Quantity", "Realized P&L (₹)",
-        "Return %", "Outcome", "Exit Reason", "Notes"
+        "Return %", "Annualized Return %", "Outcome", "Exit Reason", "Notes"
     ])
     for t in history:
+        h_days = int(t.get("hold_days", 0))
+        ret_pct = float(t.get("return_pct", 0.0))
+        ann_ret = t.get("ann_return_pct")
+        if ann_ret is None:
+            ann_ret = round(ret_pct * (365.0 / h_days), 1) if h_days > 0 else round(ret_pct, 1)
+
         writer.writerow([
             t.get("symbol", ""),
             t.get("name", ""),
             t.get("buy_date", ""),
             t.get("exit_date", ""),
-            t.get("hold_days", 0),
+            h_days,
             t.get("buy_price", 0.0),
             t.get("exit_price", 0.0),
             t.get("quantity", 0),
             t.get("realized_pnl", 0.0),
-            t.get("return_pct", 0.0),
+            f"{ret_pct}%",
+            f"{ann_ret}%",
             "WIN" if t.get("is_win", False) else "LOSS",
             t.get("exit_reason", ""),
             t.get("notes", "")

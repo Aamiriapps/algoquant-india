@@ -571,9 +571,14 @@
 
                 <!-- Tab 4: History Journal Content -->
                 <div id="tab-content-history" class="p-tab-pane hidden">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding:0 0.25rem;">
+                    <!-- History KPI Performance Dashboard (XIRR, CAGR, Realized PnL, Win Rate) -->
+                    <div class="history-kpi-bar" id="history-kpi-bar">
+                        <!-- Populated dynamically in renderHistory() -->
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding:0 0.25rem; flex-wrap:wrap; gap:0.5rem;">
                         <span style="font-size:0.85rem; color:var(--text-secondary);">
-                            <i class="fa-solid fa-database text-gold"></i> Permanent Historical Trade Journal & Methodology Log
+                            <i class="fa-solid fa-database text-gold"></i> Permanent Historical Trade Journal & Performance Audit
                         </span>
                         <a id="btn-export-history-csv" href="#" class="btn btn-sm btn-outline" style="text-decoration:none;">
                             <i class="fa-solid fa-file-csv text-green"></i> Export History CSV

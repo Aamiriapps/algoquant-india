@@ -1532,7 +1532,10 @@ function renderPortfolioSummary() {
         elRealizedPnl.className = `kpi-value ${realPnl >= 0 ? 'text-gold' : 'text-red'}`;
     }
     if (elWinRate) {
-        elWinRate.textContent = `Win Rate: ${hs.win_rate || 0}% (${hs.wins_count || 0}W / ${hs.losses_count || 0}L)`;
+        const xirrBadge = (hs.xirr_pct !== null && hs.xirr_pct !== undefined)
+            ? ` &bull; XIRR: <span class="${hs.xirr_pct >= 0 ? 'text-green' : 'text-red'} font-bold">${hs.xirr_pct >= 0 ? '+' : ''}${hs.xirr_pct}%</span>`
+            : '';
+        elWinRate.innerHTML = `Win Rate: ${hs.win_rate || 0}% (${hs.wins_count || 0}W / ${hs.losses_count || 0}L)${xirrBadge}`;
     }
 
     // Render Risk Alerts Banner
@@ -2255,6 +2258,7 @@ function renderAllocationBreakdown() {
 // Render Historical Trade Journal
 function renderHistory() {
     const container = document.getElementById('history-list-container');
+    const kpiBar = document.getElementById('history-kpi-bar');
     if (!container) return;
 
     const exportBtn = document.getElementById('btn-export-history-csv');
@@ -2264,6 +2268,7 @@ function renderHistory() {
     }
 
     if (portfolioState.history.length === 0) {
+        if (kpiBar) kpiBar.innerHTML = '';
         container.innerHTML = `
             <div class="empty-container">
                 <i class="fa-solid fa-book-bookmark empty-icon"></i>
@@ -2272,6 +2277,82 @@ function renderHistory() {
             </div>
         `;
         return;
+    }
+
+    // Render History KPI Dashboard (XIRR, CAGR, Realized Profit, Win Rate, Duration)
+    const hs = portfolioState.history_stats || {};
+    if (kpiBar) {
+        const hasXirr = hs.xirr_pct !== null && hs.xirr_pct !== undefined;
+        const xirrFormatted = hasXirr ? `${hs.xirr_pct >= 0 ? '+' : ''}${hs.xirr_pct}%` : 'N/A';
+        const xirrClass = hasXirr ? (hs.xirr_pct >= 0 ? 'text-green' : 'text-red') : 'text-muted';
+
+        const cagrFormatted = hs.cagr_pct !== undefined && hs.cagr_pct !== null ? `${hs.cagr_pct >= 0 ? '+' : ''}${hs.cagr_pct}%` : 'N/A';
+        const cagrClass = (hs.cagr_pct || 0) >= 0 ? 'text-green' : 'text-red';
+        const spanDays = hs.cagr_span_days || hs.avg_hold_days || 0;
+        const isCagrApplicable = hs.cagr_is_applicable;
+
+        kpiBar.innerHTML = `
+            <div class="history-kpi-card highlight-xirr">
+                <div class="history-kpi-label">
+                    <span><i class="fa-solid fa-bolt text-green"></i> XIRR Return</span>
+                    <span class="metric-tag metric-tag-green" title="Applicable standard for irregular cash flows">Money-Weighted</span>
+                </div>
+                <div class="history-kpi-val ${xirrClass}">${xirrFormatted}</div>
+                <div class="history-kpi-sub">
+                    <strong>Primary Metric:</strong> Annualized rate accounting for cash timing across entries and exits.
+                </div>
+            </div>
+
+            <div class="history-kpi-card highlight-cagr">
+                <div class="history-kpi-label">
+                    <span><i class="fa-solid fa-chart-line text-cyan"></i> Account CAGR</span>
+                    <span class="metric-tag ${isCagrApplicable ? 'metric-tag-cyan' : 'metric-tag-muted'}">
+                        ${isCagrApplicable ? 'Compounded' : 'Annualized (' + spanDays + 'd)'}
+                    </span>
+                </div>
+                <div class="history-kpi-val ${cagrClass}">${cagrFormatted}</div>
+                <div class="history-kpi-sub" title="${hs.cagr_note || ''}">
+                    ${hs.cagr_note || ('Compounding pace of account capital across ' + spanDays + ' calendar days')}
+                </div>
+            </div>
+
+            <div class="history-kpi-card">
+                <div class="history-kpi-label">
+                    <span><i class="fa-solid fa-sack-dollar text-gold"></i> Realized Profit</span>
+                    <span class="metric-tag metric-tag-muted">${portfolioState.history.length} Trades</span>
+                </div>
+                <div class="history-kpi-val ${(hs.total_realized_pnl || 0) >= 0 ? 'text-gold' : 'text-red'}">
+                    ${(hs.total_realized_pnl || 0) >= 0 ? '+' : ''}₹${(hs.total_realized_pnl || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </div>
+                <div class="history-kpi-sub">
+                    Total net closed gains banked into account capital
+                </div>
+            </div>
+
+            <div class="history-kpi-card">
+                <div class="history-kpi-label">
+                    <span><i class="fa-solid fa-bullseye text-purple"></i> Win Ratio</span>
+                    <span class="metric-tag metric-tag-muted">PF: ${hs.profit_factor || 1.0}</span>
+                </div>
+                <div class="history-kpi-val text-cyan">${hs.win_rate || 0}%</div>
+                <div class="history-kpi-sub">
+                    ${hs.wins_count || 0} Wins &nbsp;|&nbsp; ${hs.losses_count || 0} Losses &nbsp;(Profit Factor: ${hs.profit_factor || 1.0})
+                </div>
+            </div>
+
+            <div class="history-kpi-card">
+                <div class="history-kpi-label">
+                    <span><i class="fa-solid fa-clock-rotate-left"></i> Hold Horizon</span>
+                    <span class="metric-tag metric-tag-muted">${spanDays}d Span</span>
+                </div>
+                <div class="history-kpi-val text-secondary">
+                    ${hs.avg_hold_days || 0} <span style="font-size:0.95rem; font-weight:500;">Days Avg</span>
+                </div>
+                <div class="history-kpi-sub">
+                    Average holding duration per closed swing position
+                </div>
+            </div>
+        `;
     }
 
     container.innerHTML = `
@@ -2285,6 +2366,7 @@ function renderHistory() {
                     <th>Quantity</th>
                     <th>Realized P&L</th>
                     <th>Return %</th>
+                    <th>Annualized Return</th>
                     <th>Exit Reason</th>
                     <th>Actions</th>
                 </tr>
@@ -2293,6 +2375,10 @@ function renderHistory() {
                 ${portfolioState.history.map(t => {
                     const isWin = (t.realized_pnl || 0) > 0;
                     const pnlSign = isWin ? '+' : '';
+                    const annRet = t.ann_return_pct !== undefined ? t.ann_return_pct : (t.hold_days > 0 ? ((t.return_pct || 0) * 365 / t.hold_days).toFixed(1) : t.return_pct);
+                    const annColor = annRet >= 0 ? 'text-green' : 'text-red';
+                    const annSign = annRet >= 0 ? '+' : '';
+
                     return `
                         <tr>
                             <td>
@@ -2310,6 +2396,14 @@ function renderHistory() {
                                 <span class="badge ${isWin ? 'badge-success' : 'badge-danger'}">
                                     ${pnlSign}${t.return_pct}%
                                 </span>
+                            </td>
+                            <td>
+                                <div style="display:flex; flex-direction:column;">
+                                    <span class="${annColor} font-bold">
+                                        ${annSign}${annRet}%
+                                    </span>
+                                    <small style="color:var(--text-muted); font-size:0.7rem;">p.a. (365d)</small>
+                                </div>
                             </td>
                             <td>
                                 <small style="color:var(--text-secondary);">${t.exit_reason}</small>

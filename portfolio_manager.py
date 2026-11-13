@@ -810,6 +810,206 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
             "action_plan": action_plan
         }
 
+def calculate_portfolio_xirr(history: list) -> float | None:
+    """
+    Computes XIRR (Extended Internal Rate of Return) across all closed trades in history.
+    Models money-weighted returns from actual entry cash outflows (-buy_price * qty)
+    and exit cash inflows (+exit_price * qty) across irregular transaction dates.
+    Uses Newton-Raphson numerical solver with robust bisection fallback.
+    Returns annualized percentage (e.g. 69.15 for 69.15%) or None if undefined.
+    """
+    if not history or len(history) == 0:
+        return None
+
+    cash_flows = []
+    for t in history:
+        try:
+            b_date_str = str(t.get("buy_date", "")).strip()
+            e_date_str = str(t.get("exit_date", "")).strip()
+            if not b_date_str or not e_date_str:
+                continue
+            b_date = datetime.strptime(b_date_str, "%Y-%m-%d").date()
+            e_date = datetime.strptime(e_date_str, "%Y-%m-%d").date()
+            qty = float(t.get("quantity", 0))
+            buy_p = float(t.get("buy_price", 0))
+            exit_p = float(t.get("exit_price", 0))
+            if qty > 0 and buy_p > 0 and exit_p >= 0:
+                cash_flows.append((b_date, -round(buy_p * qty, 2)))
+                cash_flows.append((e_date, round(exit_p * qty, 2)))
+        except Exception:
+            continue
+
+    if not cash_flows:
+        return None
+
+    # Check for both positive (proceeds) and negative (investments) cash flows
+    has_pos = any(amt > 0 for _, amt in cash_flows)
+    has_neg = any(amt < 0 for _, amt in cash_flows)
+    if not (has_pos and has_neg):
+        return None
+
+    # Aggregate cash flows occurring on the exact same date
+    agg = {}
+    for d, amt in cash_flows:
+        agg[d] = agg.get(d, 0.0) + amt
+
+    clean_flows = [(d, amt) for d, amt in sorted(agg.items()) if abs(amt) > 0.01]
+    if len(clean_flows) < 2:
+        return None
+
+    d0 = clean_flows[0][0]
+    total_days = (clean_flows[-1][0] - d0).days
+    if total_days <= 0:
+        return None
+
+    dates_t = [((d - d0).days / 365.0, amt) for d, amt in clean_flows]
+
+    def npv(r):
+        if r <= -0.999999:
+            return float('inf')
+        return sum(amt / ((1.0 + r) ** t) for t, amt in dates_t)
+
+    def npv_prime(r):
+        if r <= -0.999999:
+            return float('-inf')
+        return sum(-t * amt / ((1.0 + r) ** (t + 1.0)) for t, amt in dates_t)
+
+    # Initial guess based on simple annualized return
+    total_invested = sum(-amt for _, amt in clean_flows if amt < 0)
+    total_received = sum(amt for _, amt in clean_flows if amt > 0)
+    net_pnl = total_received - total_invested
+    guess = (net_pnl / total_invested) / (total_days / 365.0) if total_invested > 0 else 0.1
+    rate = max(-0.9, min(2.0, guess))
+
+    solved = False
+    for _ in range(100):
+        f_val = npv(rate)
+        if abs(f_val) < 1e-5:
+            solved = True
+            break
+        f_prime = npv_prime(rate)
+        if abs(f_prime) < 1e-12:
+            break
+        step = f_val / f_prime
+        new_rate = rate - step
+        if new_rate <= -0.99 or new_rate > 50.0:
+            break
+        if abs(new_rate - rate) < 1e-6:
+            rate = new_rate
+            solved = True
+            break
+        rate = new_rate
+
+    # Fallback to Bisection search if Newton step failed to converge
+    if not solved:
+        low, high = -0.99, 10.0
+        f_low = npv(low)
+        f_high = npv(high)
+        if f_low * f_high > 0:
+            for upper in [25.0, 50.0, 100.0]:
+                if npv(low) * npv(upper) < 0:
+                    high = upper
+                    break
+            else:
+                return None
+
+        for _ in range(120):
+            mid = (low + high) / 2.0
+            f_mid = npv(mid)
+            if abs(f_mid) < 1e-5 or (high - low) / 2.0 < 1e-6:
+                rate = mid
+                solved = True
+                break
+            if (npv(low) > 0 and f_mid > 0) or (npv(low) < 0 and f_mid < 0):
+                low = mid
+            else:
+                high = mid
+
+    if solved:
+        return round(rate * 100.0, 2)
+    return None
+
+def calculate_portfolio_cagr(history: list, total_capital: float = 500000.0) -> dict:
+    """
+    Computes CAGR (Compound Annual Growth Rate) for the overall closed trade journal.
+    Calculates:
+      1. Account Capital CAGR: Growth of total account base capital (₹5L base) across the calendar trading window.
+      2. Invested Capital CAGR: Compounding rate across total deployed cost basis vs exit proceeds.
+    Includes calendar duration and notes on whether CAGR is mathematically applicable (period >= 30 days).
+    """
+    if not history:
+        return {
+            "cagr_pct": 0.0,
+            "invested_cagr_pct": 0.0,
+            "span_days": 0,
+            "is_applicable": False,
+            "note": "No closed trades recorded in journal yet."
+        }
+
+    dates = []
+    total_cost = 0.0
+    total_exit = 0.0
+    total_realized_pnl = 0.0
+
+    for t in history:
+        try:
+            b_date_str = str(t.get("buy_date", "")).strip()
+            e_date_str = str(t.get("exit_date", "")).strip()
+            if not b_date_str or not e_date_str:
+                continue
+            b_d = datetime.strptime(b_date_str, "%Y-%m-%d").date()
+            e_d = datetime.strptime(e_date_str, "%Y-%m-%d").date()
+            dates.extend([b_d, e_d])
+            cost = float(t.get("buy_price", 0)) * float(t.get("quantity", 0))
+            exit_val = float(t.get("exit_price", 0)) * float(t.get("quantity", 0))
+            total_cost += cost
+            total_exit += exit_val
+            total_realized_pnl += float(t.get("realized_pnl", 0))
+        except Exception:
+            continue
+
+    if not dates:
+        return {
+            "cagr_pct": 0.0,
+            "invested_cagr_pct": 0.0,
+            "span_days": 0,
+            "is_applicable": False,
+            "note": "Insufficient date data for CAGR."
+        }
+
+    min_date = min(dates)
+    max_date = max(dates)
+    span_days = max(1, (max_date - min_date).days)
+
+    # 1. Account Capital CAGR: ( (Capital + Realized PnL) / Capital ) ^ (365 / Days) - 1
+    base_cap = max(1000.0, float(total_capital))
+    ending_cap = base_cap + total_realized_pnl
+    if ending_cap <= 0:
+        cagr_pct = -100.0
+    else:
+        cagr_pct = round((((ending_cap / base_cap) ** (365.0 / span_days)) - 1.0) * 100.0, 2)
+
+    # 2. Cumulative Invested Capital CAGR: ( total_exit / total_cost ) ^ (365 / Days) - 1
+    if total_cost > 0 and total_exit > 0:
+        invested_cagr_pct = round((((total_exit / total_cost) ** (365.0 / span_days)) - 1.0) * 100.0, 2)
+    else:
+        invested_cagr_pct = 0.0
+
+    is_applicable = span_days >= 30
+    note = f"Annualized compounding rate based on {span_days} calendar days ({min_date} to {max_date})."
+    if not is_applicable:
+        note += " (Span < 30 days: XIRR is primary standard)."
+
+    return {
+        "cagr_pct": cagr_pct,
+        "invested_cagr_pct": invested_cagr_pct,
+        "span_days": span_days,
+        "start_date": str(min_date),
+        "end_date": str(max_date),
+        "is_applicable": is_applicable,
+        "note": note
+    }
+
 def analyze_entire_portfolio(portfolio_id: str = None, force_refresh: bool = False) -> dict:
     """
     Analyzes all active holdings and watchlist items for a specific portfolio concurrently.
@@ -981,19 +1181,35 @@ def analyze_entire_portfolio(portfolio_id: str = None, force_refresh: bool = Fal
                 "message": f"🚀 ATH MOMENTUM BREAKOUT on {h['symbol']}! Breaking out into blue sky territory at ₹{h.get('current_price')} (+{h.get('pnl_pct')}%). Trail SL pegged to Supertrend (₹{h.get('trailing_sl')}) and let winner run."
             })
 
-    # History Performance Stats
-    total_trades = len(history)
-    wins = [t for t in history if t.get("is_win", False) or t.get("realized_pnl", 0) > 0]
-    losses = [t for t in history if not t.get("is_win", False) and t.get("realized_pnl", 0) <= 0]
+    # History Performance Stats & Annualized Rate of Return
+    analyzed_history = []
+    for t in history:
+        t_copy = t.copy()
+        h_days = int(t_copy.get("hold_days", 0))
+        ret_pct = float(t_copy.get("return_pct", 0.0))
+        if h_days > 0:
+            ann_ret = round(ret_pct * (365.0 / h_days), 1)
+        else:
+            ann_ret = round(ret_pct, 1)
+        t_copy["ann_return_pct"] = ann_ret
+        analyzed_history.append(t_copy)
+
+    total_trades = len(analyzed_history)
+    wins = [t for t in analyzed_history if t.get("is_win", False) or t.get("realized_pnl", 0) > 0]
+    losses = [t for t in analyzed_history if not t.get("is_win", False) and t.get("realized_pnl", 0) <= 0]
     
-    total_realized_pnl = round(sum(t.get("realized_pnl", 0.0) for t in history), 2)
+    total_realized_pnl = round(sum(t.get("realized_pnl", 0.0) for t in analyzed_history), 2)
     win_rate = round((len(wins) / total_trades * 100.0), 1) if total_trades > 0 else 0.0
     
     total_gain = sum(t.get("realized_pnl", 0.0) for t in wins)
     total_loss = abs(sum(t.get("realized_pnl", 0.0) for t in losses))
     profit_factor = round(total_gain / (total_loss + 1e-9), 2) if total_loss > 0 else (round(total_gain, 2) if total_gain > 0 else 1.0)
     
-    avg_hold_days = round(sum(t.get("hold_days", 0) for t in history) / total_trades, 1) if total_trades > 0 else 0
+    avg_hold_days = round(sum(t.get("hold_days", 0) for t in analyzed_history) / total_trades, 1) if total_trades > 0 else 0
+
+    # Institutional Performance Metrics: XIRR & CAGR
+    xirr_pct = calculate_portfolio_xirr(analyzed_history)
+    cagr_data = calculate_portfolio_cagr(analyzed_history, total_capital)
 
     # Aladdin Institutional Portfolio Diagnostics & Capital Recycling Engine
     aladdin_diagnostics = calculate_aladdin_diagnostics(analyzed_holdings, total_invested)
@@ -1006,7 +1222,7 @@ def analyze_entire_portfolio(portfolio_id: str = None, force_refresh: bool = Fal
         "timestamp": datetime.now().isoformat(),
         "holdings": analyzed_holdings,
         "watchlist": analyzed_watchlist,
-        "history": history,
+        "history": analyzed_history,
         "aladdin_diagnostics": aladdin_diagnostics,
         "summary": {
             "total_capital": total_capital,
@@ -1030,7 +1246,15 @@ def analyze_entire_portfolio(portfolio_id: str = None, force_refresh: bool = Fal
             "profit_factor": profit_factor,
             "wins_count": len(wins),
             "losses_count": len(losses),
-            "avg_hold_days": avg_hold_days
+            "avg_hold_days": avg_hold_days,
+            "xirr_pct": xirr_pct,
+            "cagr_pct": cagr_data.get("cagr_pct", 0.0),
+            "invested_cagr_pct": cagr_data.get("invested_cagr_pct", 0.0),
+            "cagr_span_days": cagr_data.get("span_days", 0),
+            "cagr_start_date": cagr_data.get("start_date", ""),
+            "cagr_end_date": cagr_data.get("end_date", ""),
+            "cagr_is_applicable": cagr_data.get("is_applicable", False),
+            "cagr_note": cagr_data.get("note", "")
         }
     }
     PORTFOLIO_CACHE[p_id] = {"data": result_payload, "timestamp": now_ts}
@@ -1284,6 +1508,7 @@ def add_portfolio_item(item_type: str, item_data: dict, portfolio_id: str = None
 
         pnl = round((exit_p - buy_p) * q, 2)
         ret_pct = round(((exit_p - buy_p) / buy_p * 100.0), 2) if buy_p > 0 else 0.0
+        ann_ret = round(ret_pct * (365.0 / h_days), 1) if h_days > 0 else round(ret_pct, 1)
 
         hist_obj = {
             "id": new_id,
@@ -1297,6 +1522,7 @@ def add_portfolio_item(item_type: str, item_data: dict, portfolio_id: str = None
             "hold_days": h_days,
             "realized_pnl": pnl,
             "return_pct": ret_pct,
+            "ann_return_pct": ann_ret,
             "is_win": pnl > 0,
             "exit_reason": item_data.get("exit_reason", "Target reached / Pro Trailing exit"),
             "notes": item_data.get("notes", "").strip(),
@@ -1483,6 +1709,7 @@ def close_trade_and_log(item_id: str, exit_price: float, exit_date: str = None, 
 
     realized_pnl = round((exit_price - buy_price) * sold_qty, 2)
     return_pct = round(((exit_price - buy_price) / buy_price) * 100.0, 2) if buy_price > 0 else 0.0
+    ann_return_pct = round(return_pct * (365.0 / duration_days), 1) if duration_days > 0 else round(return_pct, 1)
     is_win = realized_pnl > 0
 
     clean_reason = exit_reason or ("Stop Loss hit" if not is_win else "Target reached / Pro Trailing exit")
@@ -1504,6 +1731,7 @@ def close_trade_and_log(item_id: str, exit_price: float, exit_date: str = None, 
         "hold_days": duration_days,
         "realized_pnl": realized_pnl,
         "return_pct": return_pct,
+        "ann_return_pct": ann_return_pct,
         "is_win": is_win,
         "exit_reason": clean_reason,
         "notes": target_holding.get("notes", "")
