@@ -419,6 +419,34 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
     dist_to_ath_pct = round(((high_52w - curr_close) / curr_close) * 100.0, 2)
     sl_5pct = round(curr_close * 0.95, 2)
 
+    # 10-period Simple Moving Average (10 SMA) & Proximity Flag
+    curr_high = float(df["high"].iloc[-1])
+    curr_low = float(df["low"].iloc[-1])
+    if "sma10" in df.columns and not pd.isna(df["sma10"].iloc[-1]):
+        curr_sma10 = round(float(df["sma10"].iloc[-1]), 2)
+    else:
+        curr_sma10 = round(float(df["close"].rolling(10, min_periods=1).mean().iloc[-1]), 2)
+
+    dist_from_sma10_pct = round(((curr_close - curr_sma10) / curr_sma10) * 100.0, 2)
+    is_touching_sma10 = bool(curr_low <= curr_sma10 <= curr_high)
+    is_reaching_sma10 = bool(abs(dist_from_sma10_pct) <= 1.0 or is_touching_sma10)
+
+    if is_touching_sma10:
+        sma10_status = "TESTING"
+        sma10_flag_text = f"Testing 10 SMA (Intraday range touched ₹{curr_sma10:.2f})"
+    elif is_reaching_sma10:
+        sma10_status = "REACHING"
+        if dist_from_sma10_pct >= 0:
+            sma10_flag_text = f"Reaching 10 SMA from above (+{dist_from_sma10_pct:.2f}% pullback)"
+        else:
+            sma10_flag_text = f"Reaching 10 SMA from below ({dist_from_sma10_pct:.2f}%)"
+    elif abs(dist_from_sma10_pct) <= 2.5:
+        sma10_status = "APPROACHING"
+        sma10_flag_text = f"Approaching 10 SMA ({dist_from_sma10_pct:+.2f}%)"
+    else:
+        sma10_status = "ABOVE" if dist_from_sma10_pct > 0 else "BELOW"
+        sma10_flag_text = f"{dist_from_sma10_pct:+.2f}% from 10 SMA"
+
     base_result = {
         "symbol": clean_sym,
         "name": meta["name"],
@@ -428,6 +456,12 @@ def analyze_single_stock(symbol: str, is_bought: bool = False, buy_price: float 
         "sl_5pct": sl_5pct,
         "sl_rule_5pct_text": f"As per 5% stop loss rule, suggested SL is ₹{sl_5pct:.2f}",
         "day_change_pct": day_change_pct,
+        "sma10": curr_sma10,
+        "dist_from_sma10_pct": dist_from_sma10_pct,
+        "is_touching_sma10": is_touching_sma10,
+        "is_reaching_sma10": is_reaching_sma10,
+        "sma10_status": sma10_status,
+        "sma10_flag_text": sma10_flag_text,
         "ema50": round(curr_ema50, 2),
         "ema200": round(curr_ema200, 2),
         "supertrend": round(curr_st, 2),
@@ -1181,6 +1215,15 @@ def analyze_entire_portfolio(portfolio_id: str = None, force_refresh: bool = Fal
                 "message": f"🚀 ATH MOMENTUM BREAKOUT on {h['symbol']}! Breaking out into blue sky territory at ₹{h.get('current_price')} (+{h.get('pnl_pct')}%). Trail SL pegged to Supertrend (₹{h.get('trailing_sl')}) and let winner run."
             })
 
+        # 10 SMA Proximity Alert
+        if h.get("is_reaching_sma10"):
+            reach_info = "testing 10 SMA intraday" if h.get("is_touching_sma10") else f"within {abs(h.get('dist_from_sma10_pct', 0)):.1f}% of 10 SMA"
+            risk_alerts.append({
+                "type": "warning",
+                "symbol": h["symbol"],
+                "message": f"⚡ 10 SMA PROXIMITY ALERT: {h['symbol']} is reaching its 10 SMA at ₹{h.get('sma10')} (CMP ₹{h.get('current_price')}, {reach_info}). Watch for key short-term moving average reaction."
+            })
+
     # History Performance Stats & Annualized Rate of Return
     analyzed_history = []
     for t in history:
@@ -1237,6 +1280,7 @@ def analyze_entire_portfolio(portfolio_id: str = None, force_refresh: bool = Fal
             "watchlist_count": len(analyzed_watchlist),
             "exit_now_alerts": exit_now_count,
             "target1_alerts": t1_hit_count,
+            "sma10_reaching_count": sum(1 for h in analyzed_holdings if h.get("is_reaching_sma10")),
             "risk_alerts": risk_alerts
         },
         "history_stats": {

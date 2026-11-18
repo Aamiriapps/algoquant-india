@@ -415,6 +415,7 @@ def _build_dataframe_from_dict(d: dict, range_str: str, interval: str) -> pd.Dat
         df["ema50"]     = df["close"].ewm(span=50,  adjust=False).mean()
         df["ema200"]    = df["close"].ewm(span=200, adjust=False).mean()
         df["ema20"]     = df["close"].ewm(span=20,  adjust=False).mean()
+        df["sma10"]     = df["close"].rolling(10, min_periods=1).mean()
         df["vol_sma20"] = df["volume"].rolling(20).mean()
         
         # ── RSI-14 (Wilder's smoothing) ────────────────────────────────────
@@ -1180,6 +1181,7 @@ def get_chart_data(symbol: str, mode: str = "daily") -> dict:
     main_ema_line = []
     secondary_ema_line = []
     supertrend_line = []
+    sma10_line = []
     
     for _, row in df.iterrows():
         time_str = row["date"].strftime("%Y-%m-%d %H:%M") if mode == "intraday" else row["date"].strftime("%Y-%m-%d")
@@ -1200,6 +1202,10 @@ def get_chart_data(symbol: str, mode: str = "daily") -> dict:
         # 200 EMA (for Daily)
         if mode == "daily" and not pd.isna(row["ema200"]):
             secondary_ema_line.append({"time": time_str, "value": round(float(row["ema200"]), 2)})
+
+        # 10 SMA
+        if "sma10" in row and not pd.isna(row["sma10"]):
+            sma10_line.append({"time": time_str, "value": round(float(row["sma10"]), 2)})
             
         if not pd.isna(row["supertrend"]):
             supertrend_line.append({
@@ -1220,6 +1226,7 @@ def get_chart_data(symbol: str, mode: str = "daily") -> dict:
         "main_ema_name": "50 EMA" if mode == "daily" else "200 EMA (Intraday)",
         "secondary_ema": secondary_ema_line,
         "supertrend": supertrend_line,
+        "sma10": sma10_line,
         "recent_signals": signals
     }
 

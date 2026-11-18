@@ -619,7 +619,10 @@ async function openChartModal(input) {
     const suitBadge = s.suitability ?
         `<span class="badge ${s.is_actionable ? 'badge-success' : 'badge-warning'}">${s.suitability}</span>` : '';
 
-    el.modalStockBadges.innerHTML = `${signalBadge} ${ageBadge} ${suitBadge}`;
+    const sma10Badge = s.is_reaching_sma10 ? 
+        `<span class="badge badge-amber badge-pulsing"><i class="fa-solid fa-bell"></i> ${s.is_touching_sma10 ? 'Testing' : 'Reaching'} 10 SMA (₹${s.sma10})</span>` : '';
+
+    el.modalStockBadges.innerHTML = `${signalBadge} ${ageBadge} ${suitBadge} ${sma10Badge}`;
 
     // Stats bar
     const cmp = s.current_price || '--';
@@ -630,9 +633,11 @@ async function openChartModal(input) {
     const stColor = isBull ? 'var(--bullish-green)' : 'var(--bearish-red)';
     const slVal = s.trailing_sl || s.suggested_sl || s.stop_loss || '--';
     const t1Val = s.target_price_action_high || s.target1 || '--';
+    const sma10Html = s.sma10 ? `<span>10 SMA: <strong style="color: #fbbf24">₹${s.sma10}</strong> <small style="color:${(s.dist_from_sma10_pct || 0) >= 0 ? '#4ade80' : '#f87171'}">(${(s.dist_from_sma10_pct || 0) >= 0 ? '+' : ''}${s.dist_from_sma10_pct || 0}%)</small></span>` : '';
 
     el.modalStatsBar.innerHTML = `
         <span>CMP: <strong>₹${cmp}</strong></span>
+        ${sma10Html}
         <span>${mainEmaName}: <strong style="color: var(--accent-cyan)">₹${mainEmaVal}</strong></span>
         <span>Supertrend: <strong style="color: ${stColor}">₹${stVal}</strong></span>
         <span>Stop-Loss: <strong class="text-red">₹${slVal}</strong></span>
@@ -640,7 +645,9 @@ async function openChartModal(input) {
     `;
 
     // Legend adjustments
+    const sma10Pill = document.getElementById('legend-sma10-pill');
     if (!isIntraday) {
+        if (sma10Pill) sma10Pill.classList.remove('hidden');
         el.legendEmaLabel.textContent = '50 EMA';
         if (state.mode === 'portfolio') {
             el.legendSecondaryPill.classList.add('hidden');
@@ -648,6 +655,7 @@ async function openChartModal(input) {
             el.legendSecondaryPill.classList.remove('hidden');
         }
     } else {
+        if (sma10Pill) sma10Pill.classList.add('hidden');
         el.legendEmaLabel.textContent = '200 EMA (Intraday)';
         el.legendSecondaryPill.classList.add('hidden');
     }
@@ -759,6 +767,23 @@ function renderCandlestickChart(chartData, signalInfo) {
         ctx.lineWidth = 1.5;
         let started = false;
         chartData.secondary_ema.forEach(p => {
+            if (timeToXMap[p.time] !== undefined) {
+                const x = timeToXMap[p.time];
+                const y = priceToY(p.value);
+                if (!started) { ctx.moveTo(x, y); started = true; }
+                else { ctx.lineTo(x, y); }
+            }
+        });
+        ctx.stroke();
+    }
+
+    // 10 SMA Line (Warm Amber)
+    if (chartData.sma10 && chartData.sma10.length > 0) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1.8;
+        let started = false;
+        chartData.sma10.forEach(p => {
             if (timeToXMap[p.time] !== undefined) {
                 const x = timeToXMap[p.time];
                 const y = priceToY(p.value);
@@ -1675,6 +1700,7 @@ function renderHoldings() {
         let borderClass = '';
         if (h.urgency === 'CRITICAL' || h.urgency === 'HIGH') borderClass = 'border-critical';
         else if (h.urgency === 'ACTIONABLE') borderClass = 'border-gold';
+        else if (h.is_reaching_sma10) borderClass = 'border-amber-glow';
 
         return `
             <div class="holding-card ${borderClass}">
@@ -1687,6 +1713,11 @@ function renderHoldings() {
                             <span class="badge badge-cyan" style="font-size:0.72rem; font-weight:700; margin-left:0.35rem;" title="Percentage allocation of total invested capital">
                                 <i class="fa-solid fa-chart-pie"></i> ${h.allocation_pct || 0}% Weight
                             </span>
+                            ${h.is_reaching_sma10 ? `
+                                <span class="badge badge-amber badge-pulsing" style="font-size:0.72rem; font-weight:700; margin-left:0.35rem;" title="${h.sma10_flag_text || 'Reaching 10 SMA'}">
+                                    <i class="fa-solid fa-bell text-amber"></i> ${h.is_touching_sma10 ? 'TESTING' : 'REACHING'} 10 SMA (₹${h.sma10})
+                                </span>
+                            ` : ''}
                         </div>
                     </div>
                     <div class="p-price-group">
@@ -1723,6 +1754,18 @@ function renderHoldings() {
                         <span class="p-m-val ${isGain ? 'text-green' : 'text-red'}">
                             ${pnlSign}₹${h.unrealized_pnl.toLocaleString('en-IN', { maximumFractionDigits: 2 })} (${pnlSign}${h.pnl_pct}%)
                         </span>
+                    </div>
+                    <div class="p-metric-item ${h.is_reaching_sma10 ? 'highlight-box-amber' : ''}">
+                        <span class="p-m-lbl">10 SMA (Daily)</span>
+                        <span class="p-m-val ${h.is_reaching_sma10 ? 'text-amber font-bold' : ''}">
+                            ₹${(h.sma10 || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                        </span>
+                        <div style="font-size:0.75rem; margin-top:2px; display:flex; align-items:center; gap:4px;">
+                            <span class="${(h.dist_from_sma10_pct || 0) >= 0 ? 'text-green' : 'text-red'} font-bold">
+                                ${(h.dist_from_sma10_pct || 0) >= 0 ? '+' : ''}${h.dist_from_sma10_pct}%
+                            </span>
+                            ${h.is_touching_sma10 ? '<span class="badge badge-xs badge-warning" style="font-size:0.65rem; padding:1px 4px;">Touched</span>' : (h.is_reaching_sma10 ? '<span class="badge badge-xs badge-amber" style="font-size:0.65rem; padding:1px 4px;">Reaching</span>' : '')}
+                        </div>
                     </div>
                     <div class="p-metric-item highlight-box">
                         <span class="p-m-lbl">Supertrend Trailing SL</span>
@@ -2008,13 +2051,18 @@ function renderWatchlist() {
         const dayMovePos = (w.day_change_pct || 0) >= 0;
 
         return `
-            <div class="watchlist-card">
+            <div class="watchlist-card ${w.is_reaching_sma10 ? 'border-amber-glow' : ''}">
                 <div class="p-card-top">
                     <div class="p-symbol-group">
                         <span class="p-symbol">${w.symbol}</span>
                         <div>
                             <div class="p-name">${w.name}</div>
                             <span class="p-sector-badge">${w.sector}</span>
+                            ${w.is_reaching_sma10 ? `
+                                <span class="badge badge-amber badge-pulsing" style="font-size:0.72rem; font-weight:700; margin-left:0.35rem;" title="${w.sma10_flag_text || 'Reaching 10 SMA'}">
+                                    <i class="fa-solid fa-bell text-amber"></i> ${w.is_touching_sma10 ? 'TESTING' : 'REACHING'} 10 SMA (₹${w.sma10})
+                                </span>
+                            ` : ''}
                         </div>
                     </div>
                     <div class="p-price-group">
@@ -2027,6 +2075,18 @@ function renderWatchlist() {
 
                 <!-- Technical Indicators Snapshot -->
                 <div class="p-metrics-row">
+                    <div class="p-metric-item ${w.is_reaching_sma10 ? 'highlight-box-amber' : ''}">
+                        <span class="p-m-lbl">10 SMA (Daily)</span>
+                        <span class="p-m-val ${w.is_reaching_sma10 ? 'text-amber font-bold' : ''}">
+                            ₹${(w.sma10 || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                        </span>
+                        <div style="font-size:0.75rem; margin-top:2px; display:flex; align-items:center; gap:4px;">
+                            <span class="${(w.dist_from_sma10_pct || 0) >= 0 ? 'text-green' : 'text-red'} font-bold">
+                                ${(w.dist_from_sma10_pct || 0) >= 0 ? '+' : ''}${w.dist_from_sma10_pct}%
+                            </span>
+                            ${w.is_touching_sma10 ? '<span class="badge badge-xs badge-warning" style="font-size:0.65rem; padding:1px 4px;">Touched</span>' : (w.is_reaching_sma10 ? '<span class="badge badge-xs badge-amber" style="font-size:0.65rem; padding:1px 4px;">Reaching</span>' : '')}
+                        </div>
+                    </div>
                     <div class="p-metric-item">
                         <span class="p-m-lbl">50 EMA (Daily)</span>
                         <span class="p-m-val">₹${w.ema50}</span>
