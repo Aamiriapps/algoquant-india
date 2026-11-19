@@ -418,6 +418,11 @@ function renderSignals() {
         );
     }
 
+    // For Momentum mode: strictly sort by RSI high to low
+    if (state.mode === 'momentum') {
+        filtered.sort((a, b) => (parseFloat(b.rsi14) || 0) - (parseFloat(a.rsi14) || 0));
+    }
+
     el.signalsContainer.innerHTML = '';
 
     if (filtered.length === 0) {

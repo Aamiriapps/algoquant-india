@@ -404,13 +404,8 @@ def run_momentum_screener(top_n: int = 25, max_workers: int = 30, force_refresh:
             if r:
                 qualified.append(r)
                 
-    # 3. Rank stocks:
-    # Bullish Supertrend (direction == 1), then RSI descending, then ROCE descending
-    qualified.sort(key=lambda x: (
-        x["supertrend_direction"].startswith("Bullish"),
-        x["rsi14"],
-        x["fundamentals"]["roce"]
-    ), reverse=True)
+    # 3. Rank stocks: Sort order is based on RSI high to low
+    qualified.sort(key=lambda x: float(x.get("rsi14", 0.0)), reverse=True)
 
     # Slice top N stocks (Top 25)
     top_signals = qualified[:top_n]
