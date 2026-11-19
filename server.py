@@ -32,6 +32,11 @@ from portfolio_manager import (
     get_portfolio_by_id
 )
 
+try:
+    from screener_momentum import run_momentum_screener
+except ImportError:
+    run_momentum_screener = None
+
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -74,7 +79,7 @@ def save_disk_cache(mode: str, data: dict):
     except Exception as e:
         print(f"Error saving {mode} cache to disk: {e}")
 
-# Dual-Cache: Daily Swing and Intraday Momentum
+# Triple-Cache: Daily Swing, Intraday Momentum, and Screener.in Momentum
 SCAN_CACHE = {
     "daily": {
         "data": load_disk_cache("daily"),
@@ -83,6 +88,11 @@ SCAN_CACHE = {
     },
     "intraday": {
         "data": load_disk_cache("intraday"),
+        "last_scanned": None,
+        "is_scanning": False
+    },
+    "momentum": {
+        "data": load_disk_cache("momentum"),
         "last_scanned": None,
         "is_scanning": False
     }
@@ -96,7 +106,10 @@ def background_cache_worker(mode: str):
     SCAN_CACHE[mode]["is_scanning"] = True
     try:
         print(f"[{mode.upper()}] Starting background scan across Nifty 500 stocks...")
-        data = run_full_scan(mode=mode)
+        if mode == "momentum" and run_momentum_screener:
+            data = run_momentum_screener(top_n=25, force_refresh=True)
+        else:
+            data = run_full_scan(mode=mode)
         SCAN_CACHE[mode]["data"] = data
         SCAN_CACHE[mode]["last_scanned"] = datetime.now().isoformat()
         save_disk_cache(mode, data)
@@ -189,7 +202,7 @@ def api_scan():
     - If user requests force refresh, triggers background scan and immediately returns cached data with is_updating=True.
     """
     mode = request.args.get("mode", "daily").lower()
-    if mode not in ["daily", "intraday"]:
+    if mode not in ["daily", "intraday", "momentum"]:
         mode = "daily"
         
     force_refresh = request.args.get("refresh", "false").lower() == "true"
@@ -199,7 +212,7 @@ def api_scan():
     
     global SCAN_CACHE
     now_ts = time.time()
-    # Cache Max-Age: 5 minutes (300s) for Intraday mode, 30 minutes (1800s) for Daily mode
+    # Cache Max-Age: 5 minutes (300s) for Intraday mode, 30 minutes (1800s) for Daily & Momentum modes
     max_cache_age_sec = 300.0 if mode == "intraday" else 1800.0
 
     if not force_refresh:
@@ -257,7 +270,10 @@ def api_scan():
             res["is_updating"] = True
             return jsonify(res)
         
-    results = run_full_scan(mode=mode, days_lookback=days, bars_lookback=bars, buy_only=buy_only)
+    if mode == "momentum" and run_momentum_screener:
+        results = run_momentum_screener(top_n=25, force_refresh=force_refresh)
+    else:
+        results = run_full_scan(mode=mode, days_lookback=days, bars_lookback=bars, buy_only=buy_only)
     SCAN_CACHE[mode]["data"] = results
     SCAN_CACHE[mode]["last_scanned"] = datetime.now().isoformat()
     save_disk_cache(mode, results)

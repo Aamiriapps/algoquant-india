@@ -29,6 +29,7 @@ const el = {
 
     // Mode Switcher Buttons
     btnModeDaily: document.getElementById('btn-mode-daily'),
+    btnModeMomentum: document.getElementById('btn-mode-momentum'),
     btnModeIntraday: document.getElementById('btn-mode-intraday'),
     btnModePortfolio: document.getElementById('btn-mode-portfolio'),
     screenerView: document.getElementById('screener-view'),
@@ -138,11 +139,18 @@ async function fetchMarketStatus() {
 }
 
 function initEventListeners() {
-    // Mode Switcher: Daily vs Intraday
+    // Mode Switcher: Daily, Momentum, Intraday, Portfolio
     el.btnModeDaily.addEventListener('click', () => {
         if (state.mode === 'daily') return;
         setMode('daily');
     });
+
+    if (el.btnModeMomentum) {
+        el.btnModeMomentum.addEventListener('click', () => {
+            if (state.mode === 'momentum') return;
+            setMode('momentum');
+        });
+    }
 
     el.btnModeIntraday.addEventListener('click', () => {
         if (state.mode === 'intraday') return;
@@ -249,12 +257,13 @@ function initEventListeners() {
     });
 }
 
-// Switch between Daily Swing, Intraday Momentum, and Pro Swing Portfolio modes
+// Switch between Daily Swing, Momentum Screener, Intraday Momentum, and Pro Swing Portfolio modes
 function setMode(newMode) {
     state.mode = newMode;
 
     if (newMode === 'portfolio') {
         el.btnModeDaily.classList.remove('active');
+        if (el.btnModeMomentum) el.btnModeMomentum.classList.remove('active');
         el.btnModeIntraday.classList.remove('active');
         el.btnModePortfolio.classList.add('active');
 
@@ -273,6 +282,7 @@ function setMode(newMode) {
 
     if (newMode === 'daily') {
         el.btnModeDaily.classList.add('active');
+        if (el.btnModeMomentum) el.btnModeMomentum.classList.remove('active');
         el.btnModeIntraday.classList.remove('active');
 
         el.headerStrategySubtitle.textContent = 'Daily 50 EMA + Supertrend (10, 3) Swing Screener';
@@ -285,8 +295,24 @@ function setMode(newMode) {
         el.kpiTriggersLabel.textContent = 'Swing Crossovers';
         el.kpiTriggersSub.textContent = 'Swing triggers found';
         el.calcRiskPct.value = '1.0';
+    } else if (newMode === 'momentum') {
+        el.btnModeDaily.classList.remove('active');
+        if (el.btnModeMomentum) el.btnModeMomentum.classList.add('active');
+        el.btnModeIntraday.classList.remove('active');
+
+        el.headerStrategySubtitle.textContent = 'Screener.in Momentum & Growth Strategy (Top 25 Leaders)';
+        el.bannerModeVal.textContent = 'Fundamental + Technical Momentum (Top 25)';
+        if (el.bannerSetupVal) el.bannerSetupVal.textContent = 'Mcap > ₹500 Cr | Price > 200 DMA | 50 DMA > 200 DMA | RSI 60-100 | NP & Sales YoY Growth | ROCE > 15% | D/E < 1';
+        el.tabCoreLabel.textContent = 'Screener.in Momentum Rules (Top 25 Stocks)';
+        el.signalsHeading.textContent = 'Top 25 Momentum & Fundamental Growth Leaders';
+        el.signalsDesc.textContent = 'Screened via exact Screener.in 11 criteria (Market Cap, ROCE, YoY Profits/Sales, 50/200 DMA, RSI)';
+        el.loadingText.textContent = 'Scanning Screener.in Top 25 Momentum Stocks...';
+        el.kpiTriggersLabel.textContent = 'Momentum Stocks';
+        el.kpiTriggersSub.textContent = 'Top 25 leaders listed';
+        el.calcRiskPct.value = '1.0';
     } else {
         el.btnModeDaily.classList.remove('active');
+        if (el.btnModeMomentum) el.btnModeMomentum.classList.remove('active');
         el.btnModeIntraday.classList.add('active');
 
         el.headerStrategySubtitle.textContent = 'Intraday 200 EMA + Supertrend (10, 3) Momentum Screener';
@@ -432,6 +458,8 @@ function createSignalCard(s) {
         } else {
             ageBadge = `<span class="badge badge-secondary">${s.days_ago} DAYS AGO</span>`;
         }
+    } else if (state.mode === 'momentum') {
+        ageBadge = '<span class="badge badge-success"><span class="pulse-dot"></span> TOP 25 MOMENTUM</span>';
     } else {
         // Intraday (Bars / Minutes)
         if (s.bars_ago <= 1) {
@@ -524,6 +552,31 @@ function createSignalCard(s) {
             </div>` : ''}
         </div>
 
+        ${s.fundamentals ? `
+        <div class="metrics-strip" style="background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 8px; margin-top: 0.5rem; margin-bottom: 0.75rem;">
+            <div class="m-item">
+                <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-building-columns"></i> Market Cap</span>
+                <span class="m-val" style="color: #fff;">₹${(s.fundamentals.mcap || 0).toLocaleString('en-IN')} Cr</span>
+            </div>
+            <div class="m-item">
+                <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-chart-line"></i> ROCE</span>
+                <span class="m-val text-green">${s.fundamentals.roce}%</span>
+            </div>
+            <div class="m-item">
+                <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-sack-dollar"></i> Net Profit (YoY)</span>
+                <span class="m-val text-green">₹${(s.fundamentals.np || 0).toLocaleString('en-IN')} Cr (+${s.fundamentals.np_growth_pct}%)</span>
+            </div>
+            <div class="m-item">
+                <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-cart-shopping"></i> Sales (YoY)</span>
+                <span class="m-val text-green">₹${(s.fundamentals.sales || 0).toLocaleString('en-IN')} Cr (+${s.fundamentals.sales_growth_pct}%)</span>
+            </div>
+            <div class="m-item">
+                <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-scale-balanced"></i> Debt to Equity</span>
+                <span class="m-val" style="color: ${s.fundamentals.debt_to_equity <= 0.5 ? 'var(--bullish-green)' : '#fff'};">${s.fundamentals.debt_to_equity}</span>
+            </div>
+        </div>
+        ` : ''}
+
         <div class="card-analysis-row">
             <div class="analysis-reason">
                 <i class="fa-solid fa-circle-info" style="color: var(--accent-cyan); margin-top: 2px;"></i>
@@ -537,7 +590,7 @@ function createSignalCard(s) {
 
         <div class="card-actions-row">
             <div class="card-extra-pills">
-                <span><i class="fa-solid fa-clock"></i> ${state.mode === 'daily' ? 'Trigger Date:' : 'Trigger Bar:'} <strong>${s.trigger_date}</strong></span>
+                <span><i class="fa-solid fa-clock"></i> ${state.mode === 'intraday' ? 'Trigger Bar:' : 'Trigger Date:'} <strong>${s.trigger_date}</strong></span>
                 <span>&bull;</span>
                 <span>Timeframe: <strong>${s.timeframe}</strong></span>
                 <span>&bull;</span>
@@ -551,7 +604,7 @@ function createSignalCard(s) {
 
             <div class="card-btn-group">
                 <button class="btn btn-secondary btn-sm btn-chart" data-symbol="${s.symbol}">
-                    <i class="fa-solid fa-chart-candlestick"></i> View ${state.mode === 'daily' ? 'Daily' : '15m'} Chart
+                    <i class="fa-solid fa-chart-candlestick"></i> View ${state.mode === 'intraday' ? '15m' : 'Daily'} Chart
                 </button>
                 <button class="btn btn-primary btn-sm btn-calc" 
                     data-symbol="${s.symbol}" 
