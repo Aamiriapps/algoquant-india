@@ -107,7 +107,7 @@ def background_cache_worker(mode: str):
     try:
         print(f"[{mode.upper()}] Starting background scan across Nifty 500 stocks...")
         if mode == "momentum" and run_momentum_screener:
-            data = run_momentum_screener(top_n=25, force_refresh=True)
+            data = run_momentum_screener(top_n=None, force_refresh=True)
         else:
             data = run_full_scan(mode=mode)
         SCAN_CACHE[mode]["data"] = data
@@ -271,7 +271,7 @@ def api_scan():
             return jsonify(res)
         
     if mode == "momentum" and run_momentum_screener:
-        results = run_momentum_screener(top_n=25, force_refresh=force_refresh)
+        results = run_momentum_screener(top_n=None, force_refresh=force_refresh)
     else:
         results = run_full_scan(mode=mode, days_lookback=days, bars_lookback=bars, buy_only=buy_only)
     SCAN_CACHE[mode]["data"] = results

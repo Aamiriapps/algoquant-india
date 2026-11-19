@@ -40,6 +40,8 @@ CACHE_FILE = os.path.join(CACHE_DIR, "scan_momentum.json")
 # Fields: mcap (Cr), np (Cr), np_prev (Cr), sales (Cr), sales_prev (Cr), roce (%), de (debt to equity)
 MOMENTUM_FUNDAMENTAL_UNIVERSE = [
     # Auto & Components
+    {"symbol": "ASAHIINDIA", "name": "Asahi India Glass Ltd", "sector": "Auto Components / Glass", "mcap": 28000, "np": 352, "np_prev": 331, "sales": 4451, "sales_prev": 4018, "roce": 18.2, "de": 0.35},
+    {"symbol": "HYUNDAI", "name": "Hyundai Motor India Ltd", "sector": "Automobile", "mcap": 18000, "np": 6060, "np_prev": 4709, "sales": 69829, "sales_prev": 60308, "roce": 28.5, "de": 0.00},
     {"symbol": "UNOMINDA", "name": "Uno Minda Ltd", "sector": "Auto Components", "mcap": 59000, "np": 854, "np_prev": 654, "sales": 14229, "sales_prev": 11236, "roce": 20.8, "de": 0.28},
     {"symbol": "CRAFTSMAN", "name": "Craftsman Automation Ltd", "sector": "Auto Components", "mcap": 25100, "np": 304, "np_prev": 251, "sales": 4452, "sales_prev": 3183, "roce": 18.2, "de": 0.72},
     {"symbol": "GABRIEL", "name": "Gabriel India Ltd", "sector": "Auto Components", "mcap": 22000, "np": 185, "np_prev": 132, "sales": 3346, "sales_prev": 2972, "roce": 19.8, "de": 0.02},
@@ -55,6 +57,7 @@ MOMENTUM_FUNDAMENTAL_UNIVERSE = [
     {"symbol": "SCHAEFFLER", "name": "Schaeffler India Ltd", "sector": "Auto Components", "mcap": 58000, "np": 909, "np_prev": 879, "sales": 7226, "sales_prev": 6867, "roce": 24.1, "de": 0.00},
 
     # Financial Intermediaries, Broking & Wealth
+    {"symbol": "POONAWALLA", "name": "Poonawalla Fincorp Ltd", "sector": "Financial Services", "mcap": 39000, "np": 1027, "np_prev": 585, "sales": 3133, "sales_prev": 2003, "roce": 16.8, "de": 0.95},
     {"symbol": "ANANDRATHI", "name": "Anand Rathi Wealth Ltd", "sector": "Financial Services", "mcap": 19800, "np": 226, "np_prev": 169, "sales": 752, "sales_prev": 558, "roce": 48.2, "de": 0.00},
     {"symbol": "MOTILALOFS", "name": "Motilal Oswal Financial Services", "sector": "Financial Services", "mcap": 36100, "np": 2446, "np_prev": 933, "sales": 7130, "sales_prev": 4276, "roce": 25.1, "de": 0.88},
     {"symbol": "CDSL", "name": "Central Depository Services Ltd", "sector": "Financial Services", "mcap": 29700, "np": 419, "np_prev": 276, "sales": 907, "sales_prev": 621, "roce": 37.9, "de": 0.00},
@@ -71,6 +74,9 @@ MOMENTUM_FUNDAMENTAL_UNIVERSE = [
     {"symbol": "SUNDARMFIN", "name": "Sundaram Finance Ltd", "sector": "Financial Services", "mcap": 48000, "np": 1334, "np_prev": 1088, "sales": 5352, "sales_prev": 4110, "roce": 15.4, "de": 0.92},
 
     # Retail, FMCG & Consumer Durables
+    {"symbol": "HONASA", "name": "Honasa Consumer Ltd (Mamaearth)", "sector": "FMCG / Personal Care", "mcap": 17000, "np": 110, "np_prev": -151, "sales": 1920, "sales_prev": 1493, "roce": 16.5, "de": 0.00},
+    {"symbol": "ETERNAL", "name": "Eternal Ltd (formerly Zomato)", "sector": "Internet / Food Tech", "mcap": 320000, "np": 351, "np_prev": -971, "sales": 12114, "sales_prev": 7079, "roce": 15.4, "de": 0.00},
+    {"symbol": "INDIGO", "name": "InterGlobe Aviation Ltd (IndiGo)", "sector": "Aviation", "mcap": 210000, "np": 8172, "np_prev": -306, "sales": 68865, "sales_prev": 54446, "roce": 38.5, "de": 0.85},
     {"symbol": "INDHOTEL", "name": "The Indian Hotels Co Ltd (Taj)", "sector": "Hotels / Hospitality", "mcap": 126000, "np": 1330, "np_prev": 1053, "sales": 6952, "sales_prev": 5949, "roce": 16.8, "de": 0.28},
     {"symbol": "SAREGAMA", "name": "Saregama India Ltd", "sector": "Media / Entertainment", "mcap": 12800, "np": 198, "np_prev": 185, "sales": 803, "sales_prev": 737, "roce": 18.2, "de": 0.00},
     {"symbol": "JYOTICNC", "name": "Jyoti CNC Automation Ltd", "sector": "Capital Goods / CNC Machines", "mcap": 24000, "np": 151, "np_prev": 15, "sales": 1385, "sales_prev": 929, "roce": 16.4, "de": 0.42},
@@ -165,6 +171,10 @@ MOMENTUM_FUNDAMENTAL_UNIVERSE = [
     {"symbol": "RATNAMANI", "name": "Ratnamani Metals & Tubes Ltd", "sector": "Capital Goods", "mcap": 24500, "np": 603, "np_prev": 506, "sales": 4768, "sales_prev": 4475, "roce": 24.5, "de": 0.01},
 
     # Real Estate & Infra
+    {"symbol": "DLF", "name": "DLF Ltd", "sector": "Real Estate", "mcap": 190000, "np": 2727, "np_prev": 2036, "sales": 6470, "sales_prev": 5695, "roce": 15.2, "de": 0.08},
+    {"symbol": "OBEROIRLTY", "name": "Oberoi Realty Ltd", "sector": "Real Estate", "mcap": 65000, "np": 1925, "np_prev": 1904, "sales": 4496, "sales_prev": 4193, "roce": 16.2, "de": 0.22},
+    {"symbol": "ADANIPORTS", "name": "Adani Ports and SEZ Ltd", "sector": "Ports & Logistics", "mcap": 410000, "np": 8104, "np_prev": 5310, "sales": 26711, "sales_prev": 20852, "roce": 15.8, "de": 0.85},
+    {"symbol": "INOXINDIA", "name": "INOX India Ltd", "sector": "Capital Goods / Cryogenics", "mcap": 19000, "np": 196, "np_prev": 153, "sales": 1148, "sales_prev": 966, "roce": 32.5, "de": 0.00},
     {"symbol": "PRESTIGE", "name": "Prestige Estates Projects Ltd", "sector": "Real Estate", "mcap": 68000, "np": 1374, "np_prev": 1067, "sales": 7741, "sales_prev": 4777, "roce": 15.8, "de": 0.74},
     {"symbol": "LODHA", "name": "Macrotech Developers (Lodha)", "sector": "Real Estate", "mcap": 116000, "np": 1549, "np_prev": 487, "sales": 10316, "sales_prev": 9470, "roce": 15.6, "de": 0.42},
     {"symbol": "PHOENIXLTD", "name": "The Phoenix Mills Ltd", "sector": "Real Estate", "mcap": 40000, "np": 1026, "np_prev": 1024, "sales": 3598, "sales_prev": 2638, "roce": 15.2, "de": 0.48},
@@ -375,9 +385,9 @@ def analyze_single_momentum_stock(stock: dict) -> dict:
     except Exception as e:
         return None
 
-def run_momentum_screener(top_n: int = 25, max_workers: int = 30, force_refresh: bool = False) -> dict:
+def run_momentum_screener(top_n: int = None, max_workers: int = 30, force_refresh: bool = False) -> dict:
     """
-    Scans the fundamental universe, applies all 11 criteria, and returns the Top 25 stocks.
+    Scans the fundamental universe, applies all 11 criteria, and returns the entire qualified list sorted by RSI high to low.
     """
     t_start = time.time()
     
@@ -388,7 +398,7 @@ def run_momentum_screener(top_n: int = 25, max_workers: int = 30, force_refresh:
             if (time.time() - mtime) < 1800: # 30 min cache
                 with open(CACHE_FILE, "r", encoding="utf-8") as f:
                     cached_data = json.load(f)
-                    if cached_data.get("signals") and len(cached_data["signals"]) >= top_n:
+                    if cached_data.get("signals") and len(cached_data["signals"]) > 0:
                         return cached_data
         except Exception:
             pass
@@ -404,11 +414,11 @@ def run_momentum_screener(top_n: int = 25, max_workers: int = 30, force_refresh:
             if r:
                 qualified.append(r)
                 
-    # 3. Rank stocks: Sort order is based on RSI high to low
+    # 3. Rank stocks: Default sort order is based on RSI high to low
     qualified.sort(key=lambda x: float(x.get("rsi14", 0.0)), reverse=True)
 
-    # Slice top N stocks (Top 25)
-    top_signals = qualified[:top_n]
+    # Show entire list (uncapped unless explicit positive top_n requested)
+    output_signals = qualified[:top_n] if (top_n is not None and top_n > 0) else qualified
     
     t_elapsed = round(time.time() - t_start, 2)
     
@@ -425,15 +435,15 @@ def run_momentum_screener(top_n: int = 25, max_workers: int = 30, force_refresh:
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "scan_duration_sec": t_elapsed,
         "total_scanned_stocks": len(MOMENTUM_FUNDAMENTAL_UNIVERSE),
-        "total_triggers_found": len(top_signals),
-        "signals": top_signals,
+        "total_triggers_found": len(output_signals),
+        "signals": output_signals,
         "summary": {
             "total_candidates_passed_all": len(qualified),
-            "top_listed": len(top_signals),
-            "actionable_buys": len(top_signals),
+            "top_listed": len(output_signals),
+            "actionable_buys": len(output_signals),
             "actionable_sells": 0,
             "not_suitable": 0,
-            "pro_enhanced_picks": sum(1 for s in top_signals if s.get("confidence_score", 0) >= 6)
+            "pro_enhanced_picks": sum(1 for s in output_signals if s.get("confidence_score", 0) >= 6)
         }
     }
     
@@ -447,8 +457,8 @@ def run_momentum_screener(top_n: int = 25, max_workers: int = 30, force_refresh:
     return result
 
 if __name__ == "__main__":
-    res = run_momentum_screener(top_n=25, force_refresh=True)
-    print(f"Total Top Signals Returned: {len(res['signals'])}")
+    res = run_momentum_screener(top_n=None, force_refresh=True)
+    print(f"Total Qualified Signals Returned: {len(res['signals'])}")
     for i, s in enumerate(res['signals'], 1):
         fund = s["fundamentals"]
         print(f"{i:2d}. {s['symbol']:12} | CMP: ₹{s['current_price']:8.2f} | 50 DMA: ₹{s['dma50']:8.2f} | 200 DMA: ₹{s['dma200']:8.2f} | RSI: {s['rsi14']:4.1f} | ROCE: {fund['roce']}% | NP: ₹{fund['np']:,} Cr (+{fund['np_growth_pct']}%) | D/E: {fund['debt_to_equity']}")

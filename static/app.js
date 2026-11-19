@@ -10,6 +10,7 @@ const state = {
     summary: {},
     activeTab: 'core',       // 'core' | 'enhanced'
     activeFilter: 'actionable', // Default: Only show genuine actionable stocks that qualify the entry filter
+    sortBy: 'rsi_desc',      // User-selected sort: 'rsi_desc' | 'rsi_asc' | 'roce_desc' | 'np_growth_desc' | 'sales_growth_desc' | 'price_desc' | 'price_asc' | 'default'
     searchQuery: '',
     currentChartData: null,
     isLoading: false
@@ -23,6 +24,7 @@ const el = {
     btnRefresh: document.getElementById('btn-refresh-scan'),
     btnExportCsv: document.getElementById('btn-export-csv'),
     inputSearch: document.getElementById('input-search'),
+    selectSort: document.getElementById('select-sort'),
     strategyTabs: document.querySelectorAll('.strategy-tab'),
     filterPills: document.querySelectorAll('.pill'),
     enhancedExplainer: document.getElementById('enhanced-explainer'),
@@ -209,6 +211,14 @@ function initEventListeners() {
         renderSignals();
     });
 
+    // Sort By Dropdown
+    if (el.selectSort) {
+        el.selectSort.addEventListener('change', (e) => {
+            state.sortBy = e.target.value;
+            renderSignals();
+        });
+    }
+
     // Strategy Tabs (Core vs Enhanced Pro)
     el.strategyTabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -300,16 +310,20 @@ function setMode(newMode) {
         if (el.btnModeMomentum) el.btnModeMomentum.classList.add('active');
         el.btnModeIntraday.classList.remove('active');
 
-        el.headerStrategySubtitle.textContent = 'Screener.in Momentum & Growth Strategy (Top 25 Leaders)';
-        el.bannerModeVal.textContent = 'Fundamental + Technical Momentum (Top 25)';
+        el.headerStrategySubtitle.textContent = 'Screener.in Momentum & Growth Strategy (All Qualified Stocks)';
+        el.bannerModeVal.textContent = 'Fundamental + Technical Momentum (Full List)';
         if (el.bannerSetupVal) el.bannerSetupVal.textContent = 'Mcap > ₹500 Cr | Price > 200 DMA | 50 DMA > 200 DMA | RSI 60-100 | NP & Sales YoY Growth | ROCE > 15% | D/E < 1';
-        el.tabCoreLabel.textContent = 'Screener.in Momentum Rules (Top 25 Stocks)';
-        el.signalsHeading.textContent = 'Top 25 Momentum & Fundamental Growth Leaders';
-        el.signalsDesc.textContent = 'Screened via exact Screener.in 11 criteria (Market Cap, ROCE, YoY Profits/Sales, 50/200 DMA, RSI)';
-        el.loadingText.textContent = 'Scanning Screener.in Top 25 Momentum Stocks...';
+        el.tabCoreLabel.textContent = 'Screener.in Momentum Rules (Full List)';
+        el.signalsHeading.textContent = 'All Qualified Momentum & Fundamental Growth Leaders';
+        el.signalsDesc.textContent = 'Full list screened via exact Screener.in 11 criteria (Market Cap, ROCE, YoY Profits/Sales, 50/200 DMA, RSI)';
+        el.loadingText.textContent = 'Scanning Screener.in Momentum Stocks (Full List)...';
         el.kpiTriggersLabel.textContent = 'Momentum Stocks';
-        el.kpiTriggersSub.textContent = 'Top 25 leaders listed';
+        el.kpiTriggersSub.textContent = 'Qualified leaders found';
         el.calcRiskPct.value = '1.0';
+        if (el.selectSort) {
+            state.sortBy = 'rsi_desc';
+            el.selectSort.value = 'rsi_desc';
+        }
     } else {
         el.btnModeDaily.classList.remove('active');
         if (el.btnModeMomentum) el.btnModeMomentum.classList.remove('active');
@@ -418,9 +432,21 @@ function renderSignals() {
         );
     }
 
-    // For Momentum mode: strictly sort by RSI high to low
-    if (state.mode === 'momentum') {
+    // User Sort Order Application
+    if (state.sortBy === 'rsi_desc') {
         filtered.sort((a, b) => (parseFloat(b.rsi14) || 0) - (parseFloat(a.rsi14) || 0));
+    } else if (state.sortBy === 'rsi_asc') {
+        filtered.sort((a, b) => (parseFloat(a.rsi14) || 0) - (parseFloat(b.rsi14) || 0));
+    } else if (state.sortBy === 'roce_desc') {
+        filtered.sort((a, b) => ((b.fundamentals ? b.fundamentals.roce : 0) - (a.fundamentals ? a.fundamentals.roce : 0)));
+    } else if (state.sortBy === 'np_growth_desc') {
+        filtered.sort((a, b) => ((b.fundamentals ? b.fundamentals.np_growth_pct : 0) - (a.fundamentals ? a.fundamentals.np_growth_pct : 0)));
+    } else if (state.sortBy === 'sales_growth_desc') {
+        filtered.sort((a, b) => ((b.fundamentals ? b.fundamentals.sales_growth_pct : 0) - (a.fundamentals ? a.fundamentals.sales_growth_pct : 0)));
+    } else if (state.sortBy === 'price_desc') {
+        filtered.sort((a, b) => (parseFloat(b.current_price) || 0) - (parseFloat(a.current_price) || 0));
+    } else if (state.sortBy === 'price_asc') {
+        filtered.sort((a, b) => (parseFloat(a.current_price) || 0) - (parseFloat(b.current_price) || 0));
     }
 
     el.signalsContainer.innerHTML = '';
@@ -464,7 +490,7 @@ function createSignalCard(s) {
             ageBadge = `<span class="badge badge-secondary">${s.days_ago} DAYS AGO</span>`;
         }
     } else if (state.mode === 'momentum') {
-        ageBadge = '<span class="badge badge-success"><span class="pulse-dot"></span> TOP 25 MOMENTUM</span>';
+        ageBadge = '<span class="badge badge-success"><span class="pulse-dot"></span> MOMENTUM LEADER</span>';
     } else {
         // Intraday (Bars / Minutes)
         if (s.bars_ago <= 1) {
