@@ -335,7 +335,7 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="input-p-buyprice">Avg Buy Price (₹) <span class="text-red">*</span></label>
-                                    <input type="number" id="input-p-buyprice" step="0.05" placeholder="e.g. 142.50">
+                                    <input type="number" id="input-p-buyprice" step="any" placeholder="e.g. 142.50">
                                 </div>
                                 <div class="form-group">
                                     <label for="input-p-qty">Quantity (Shares) <span class="text-red">*</span></label>
@@ -347,7 +347,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="input-p-sl">Initial Stop-Loss (₹) <span class="text-muted">(Optional)</span></label>
-                                    <input type="number" id="input-p-sl" step="0.05" placeholder="Auto calculated if blank">
+                                    <input type="number" id="input-p-sl" step="any" placeholder="Auto calculated if blank">
                                 </div>
                             </div>
                         </div>
@@ -357,7 +357,7 @@
                             <div class="form-row">
                                 <div class="form-group flex-1">
                                     <label for="input-p-target-entry">Target Entry Price (₹) <span class="text-muted">(Optional)</span></label>
-                                    <input type="number" id="input-p-target-entry" step="0.05" placeholder="Desired limit entry price">
+                                    <input type="number" id="input-p-target-entry" step="any" placeholder="Desired limit entry price">
                                 </div>
                                 <div class="form-group flex-2">
                                     <label for="input-p-notes">Trade Setup Notes <span class="text-muted">(Optional)</span></label>
@@ -650,7 +650,7 @@
                         </div>
                         <div class="form-group">
                             <label>Total Account Capital (₹)</label>
-                            <input type="number" id="calc-capital" value="200000" step="5000" min="10000">
+                            <input type="number" id="calc-capital" value="200000" step="any" min="10000">
                         </div>
                     </div>
 
@@ -666,18 +666,18 @@
                         </div>
                         <div class="form-group">
                             <label>Entry Price (₹)</label>
-                            <input type="number" id="calc-entry-price" step="0.05" required>
+                            <input type="number" id="calc-entry-price" step="any" required>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label>Stop-Loss Price (₹)</label>
-                            <input type="number" id="calc-stop-loss" step="0.05" required>
+                            <input type="number" id="calc-stop-loss" step="any" required>
                         </div>
                         <div class="form-group">
                             <label>Target 1 Price (₹)</label>
-                            <input type="number" id="calc-target1" step="0.05">
+                            <input type="number" id="calc-target1" step="any">
                         </div>
                     </div>
 
@@ -750,7 +750,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Buy Price (₹) <span class="text-red">*</span></label>
-                                <input type="number" id="edit-buyprice" step="0.05" required>
+                                <input type="number" id="edit-buyprice" step="any" required>
                             </div>
                             <div class="form-group">
                                 <label>Quantity (Shares) <span class="text-red">*</span></label>
@@ -761,27 +761,27 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Initial Stop Loss (₹)</label>
-                                <input type="number" id="edit-initial-sl" step="0.05">
+                                <input type="number" id="edit-initial-sl" step="any">
                             </div>
                             <div class="form-group">
                                 <label>Target 1 (1.5R) (₹)</label>
-                                <input type="number" id="edit-target1" step="0.05">
+                                <input type="number" id="edit-target1" step="any">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Target 2 (2.5R) (₹)</label>
-                                <input type="number" id="edit-target2" step="0.05">
+                                <input type="number" id="edit-target2" step="any">
                             </div>
                             <div class="form-group">
                                 <label>Target 3 (3.5R / ATH) (₹)</label>
-                                <input type="number" id="edit-target3" step="0.05">
+                                <input type="number" id="edit-target3" step="any">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Target 4 (5.0R Runner) (₹)</label>
-                                <input type="number" id="edit-target4" step="0.05">
+                                <input type="number" id="edit-target4" step="any">
                             </div>
                         </div>
                     </div>
@@ -790,7 +790,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Target Entry Price (₹)</label>
-                                <input type="number" id="edit-target-entry" step="0.05">
+                                <input type="number" id="edit-target-entry" step="any">
                             </div>
                         </div>
                     </div>
@@ -845,7 +845,7 @@
                         </div>
                         <div class="form-group">
                             <label>Exit Price (₹) <span class="text-red">*</span></label>
-                            <input type="number" id="input-exit-price" step="0.05" required>
+                            <input type="number" id="input-exit-price" step="any" required>
                         </div>
                     </div>
 
@@ -929,7 +929,7 @@
                     <div class="form-row mb-3">
                         <div class="form-group flex-1">
                             <label for="input-new-p-capital">Allocated Capital (₹)</label>
-                            <input type="number" id="input-new-p-capital" value="500000" step="10000" min="10000">
+                            <input type="number" id="input-new-p-capital" value="500000" step="any" min="10000">
                         </div>
                         <div class="form-group flex-1">
                             <label for="input-new-p-risk">Max Risk Per Trade (%)</label>
@@ -967,7 +967,7 @@
                     <div class="form-row mb-3">
                         <div class="form-group flex-1">
                             <label for="input-settings-p-capital">Allocated Capital (₹)</label>
-                            <input type="number" id="input-settings-p-capital" step="10000" min="10000">
+                            <input type="number" id="input-settings-p-capital" step="any" min="10000">
                         </div>
                         <div class="form-group flex-1">
                             <label for="input-settings-p-risk">Max Risk Per Trade (%)</label>

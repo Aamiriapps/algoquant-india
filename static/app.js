@@ -26,7 +26,7 @@ const el = {
     strategyTabs: document.querySelectorAll('.strategy-tab'),
     filterPills: document.querySelectorAll('.pill'),
     enhancedExplainer: document.getElementById('enhanced-explainer'),
-    
+
     // Mode Switcher Buttons
     btnModeDaily: document.getElementById('btn-mode-daily'),
     btnModeIntraday: document.getElementById('btn-mode-intraday'),
@@ -34,7 +34,7 @@ const el = {
     screenerView: document.getElementById('screener-view'),
     portfolioView: document.getElementById('portfolio-view'),
     btnRefreshPortfolio: document.getElementById('btn-refresh-portfolio'),
-    
+
     // Dynamic Headings & Banners
     headerStrategySubtitle: document.getElementById('header-strategy-subtitle'),
     bannerModeVal: document.getElementById('banner-mode-val'),
@@ -45,14 +45,14 @@ const el = {
     loadingText: document.getElementById('loading-text'),
     kpiTriggersLabel: document.getElementById('kpi-triggers-label'),
     kpiTriggersSub: document.getElementById('kpi-triggers-sub'),
-    
+
     // KPIs
     kpiTotalScanned: document.getElementById('kpi-total-scanned'),
     kpiTotalTriggers: document.getElementById('kpi-total-triggers'),
     kpiActionableCount: document.getElementById('kpi-actionable-count'),
     kpiUnsuitableCount: document.getElementById('kpi-unsuitable-count'),
     kpiProCount: document.getElementById('kpi-pro-count'),
-    
+
     // Chart Modal
     chartModal: document.getElementById('chart-modal'),
     btnCloseChartModal: document.getElementById('btn-close-chart-modal'),
@@ -62,7 +62,7 @@ const el = {
     chartCanvas: document.getElementById('stock-chart-canvas'),
     legendEmaLabel: document.getElementById('legend-ema-label'),
     legendSecondaryPill: document.getElementById('legend-secondary-pill'),
-    
+
     // Calc Modal
     calcModal: document.getElementById('calc-modal'),
     btnCloseCalcModal: document.getElementById('btn-close-calc-modal'),
@@ -207,7 +207,7 @@ function initEventListeners() {
             el.strategyTabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             state.activeTab = tab.dataset.tab;
-            
+
             if (state.activeTab === 'enhanced') {
                 el.enhancedExplainer.classList.remove('hidden');
             } else {
@@ -274,7 +274,7 @@ function setMode(newMode) {
     if (newMode === 'daily') {
         el.btnModeDaily.classList.add('active');
         el.btnModeIntraday.classList.remove('active');
-        
+
         el.headerStrategySubtitle.textContent = 'Daily 50 EMA + Supertrend (10, 3) Swing Screener';
         el.bannerModeVal.textContent = 'Daily Swing Trading';
         if (el.bannerSetupVal) el.bannerSetupVal.textContent = 'Price vs 50 EMA + Supertrend (10, 3) | Full Swing Lookback';
@@ -288,7 +288,7 @@ function setMode(newMode) {
     } else {
         el.btnModeDaily.classList.remove('active');
         el.btnModeIntraday.classList.add('active');
-        
+
         el.headerStrategySubtitle.textContent = 'Intraday 200 EMA + Supertrend (10, 3) Momentum Screener';
         el.bannerModeVal.textContent = 'Intraday Momentum Trading';
         if (el.bannerSetupVal) el.bannerSetupVal.textContent = 'Intraday 15m Price vs 200 EMA + Supertrend (10, 3)';
@@ -385,7 +385,7 @@ function renderSignals() {
 
     // Filter by Search Query
     if (state.searchQuery) {
-        filtered = filtered.filter(s => 
+        filtered = filtered.filter(s =>
             s.symbol.toLowerCase().includes(state.searchQuery) ||
             s.name.toLowerCase().includes(state.searchQuery) ||
             s.sector.toLowerCase().includes(state.searchQuery)
@@ -412,7 +412,7 @@ function createSignalCard(s) {
     const isActionable = s.is_actionable;
     const isOverextended = s.suitability.includes('OVEREXTENDED') || s.suitability.includes('OVER-DUMPED');
     const isInvalidated = s.suitability.includes('INVALIDATED') || s.suitability.includes('BREAKDOWN');
-    
+
     card.className = `signal-card ${isActionable ? 'signal-card-actionable' : (isOverextended ? 'signal-card-overextended' : 'signal-card-invalidated')}`;
     if (s.enhanced_option && s.enhanced_option.vol_confirmed) {
         card.classList.add('signal-card-pro');
@@ -455,7 +455,7 @@ function createSignalCard(s) {
         verdictBadge = `<span class="badge badge-amber"><i class="fa-solid fa-shield"></i> ${s.suitability}</span>`;
     }
 
-    const proScoreBadge = s.confidence_label ? 
+    const proScoreBadge = s.confidence_label ?
         `<span class="badge badge-pro"><i class="fa-solid fa-gauge-high"></i> ${s.confidence_label}</span>` :
         `<span class="badge badge-pro"><i class="fa-solid fa-crown"></i> PRO SCORE ${s.enhanced_option.pro_score}</span>`;
 
@@ -481,11 +481,11 @@ function createSignalCard(s) {
         <div class="metrics-strip">
             <div class="m-item">
                 <span class="m-label">Current Price</span>
-                <span class="m-val">₹${s.current_price.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                <span class="m-val">₹${s.current_price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
             <div class="m-item">
                 <span class="m-label">Trigger Price</span>
-                <span class="m-val">₹${s.trigger_price.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                <span class="m-val">₹${s.trigger_price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
             <div class="m-item">
                 <span class="m-label">Move Since Trigger</span>
@@ -493,34 +493,34 @@ function createSignalCard(s) {
             </div>
             <div class="m-item">
                 <span class="m-label">${s.main_ema_name}</span>
-                <span class="m-val" style="color: var(--accent-cyan)">₹${s.main_ema.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                <span class="m-val" style="color: var(--accent-cyan)">₹${s.main_ema.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
             <div class="m-item">
                 <span class="m-label">Supertrend (10,3)</span>
                 <span class="m-val" style="color: ${s.supertrend_direction.includes('Bullish') ? 'var(--bullish-green)' : 'var(--bearish-red)'}">
-                    ₹${s.supertrend.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                    ₹${s.supertrend.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </span>
             </div>
             <div class="m-item">
                 <span class="m-label">Stop-Loss (Supertrend)</span>
-                <span class="m-val text-red">₹${s.stop_loss.toLocaleString('en-IN', {minimumFractionDigits: 2})} (-${s.risk_pct}%)</span>
+                <span class="m-val text-red">₹${s.stop_loss.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (-${s.risk_pct}%)</span>
                 <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">
                     <span style="color:var(--accent-gold); font-weight:700;"><i class="fa-solid fa-shield-halved"></i> 5% Rule SL:</span>
-                    <strong style="color:#fff;">₹${(s.sl_5pct || (s.current_price * 0.95)).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong>
+                    <strong style="color:#fff;">₹${(s.sl_5pct || (s.current_price * 0.95)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 </div>
             </div>
             <div class="m-item">
                 <span class="m-label">Target 1 (1:1.5)</span>
-                <span class="m-val text-green">₹${s.target1.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                <span class="m-val text-green">₹${s.target1.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
             <div class="m-item">
                 <span class="m-label">Target 2 (1:2.5)</span>
-                <span class="m-val text-green">₹${s.target2.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                <span class="m-val text-green">₹${s.target2.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
             ${s.target3 ? `
             <div class="m-item">
                 <span class="m-label">Target 3 (4R)</span>
-                <span class="m-val text-green">₹${s.target3.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                <span class="m-val text-green">₹${s.target3.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>` : ''}
         </div>
 
@@ -608,7 +608,7 @@ async function openChartModal(input) {
     const tfLabel = isIntraday ? '15m Intraday' : 'Daily Candlesticks';
     el.modalStockTitle.textContent = `${sym} - ${stockName} (${tfLabel})`;
 
-    const signalBadge = s.signal_type ? 
+    const signalBadge = s.signal_type ?
         `<span class="badge ${s.signal_type === 'BUY' ? 'badge-success' : 'badge-danger'}">${s.signal_type}</span>` :
         (s.exit_verdict ? `<span class="badge badge-${s.verdict_badge || 'success'}">${s.exit_verdict}</span>` : '');
 
@@ -619,7 +619,7 @@ async function openChartModal(input) {
     const suitBadge = s.suitability ?
         `<span class="badge ${s.is_actionable ? 'badge-success' : 'badge-warning'}">${s.suitability}</span>` : '';
 
-    const sma10Badge = s.is_reaching_sma10 ? 
+    const sma10Badge = s.is_reaching_sma10 ?
         `<span class="badge badge-amber badge-pulsing"><i class="fa-solid fa-bell"></i> ${s.is_touching_sma10 ? 'Testing' : 'Reaching'} 10 SMA (₹${s.sma10})</span>` : '';
 
     el.modalStockBadges.innerHTML = `${signalBadge} ${ageBadge} ${suitBadge} ${sma10Badge}`;
@@ -1176,7 +1176,7 @@ function initPortfolioModals() {
     }
 
     // Global functions for inline onclick bindings
-    window.openCreatePortfolioModal = function() {
+    window.openCreatePortfolioModal = function () {
         const modal = document.getElementById('create-portfolio-modal');
         const inputName = document.getElementById('input-new-p-name');
         if (modal) {
@@ -1186,12 +1186,12 @@ function initPortfolioModals() {
         }
     };
 
-    window.closeCreatePortfolioModal = function() {
+    window.closeCreatePortfolioModal = function () {
         const modal = document.getElementById('create-portfolio-modal');
         if (modal) modal.classList.add('hidden');
     };
 
-    window.openPortfolioSettingsModal = function() {
+    window.openPortfolioSettingsModal = function () {
         const modal = document.getElementById('portfolio-settings-modal');
         const currentP = portfolioState.allPortfolios.find(p => p.id === portfolioState.activePortfolioId);
         const settingsPId = document.getElementById('settings-p-id');
@@ -1207,7 +1207,7 @@ function initPortfolioModals() {
         if (modal) modal.classList.remove('hidden');
     };
 
-    window.closePortfolioSettingsModal = function() {
+    window.closePortfolioSettingsModal = function () {
         const modal = document.getElementById('portfolio-settings-modal');
         if (modal) modal.classList.add('hidden');
     };
@@ -1230,7 +1230,7 @@ function initPortfolioModals() {
     if (btnCancelCreateP) {
         btnCancelCreateP.addEventListener('click', window.closeCreatePortfolioModal);
     }
-    window.handleCreatePortfolioSubmit = async function(e) {
+    window.handleCreatePortfolioSubmit = async function (e) {
         if (e) e.preventDefault();
         const inputNewPName = document.getElementById('input-new-p-name');
         const inputNewPCapital = document.getElementById('input-new-p-capital');
@@ -1268,7 +1268,7 @@ function initPortfolioModals() {
         }
     };
 
-    window.handlePortfolioSettingsSubmit = async function(e) {
+    window.handlePortfolioSettingsSubmit = async function (e) {
         if (e) e.preventDefault();
         const settingsPId = document.getElementById('settings-p-id');
         const inputSettingsPName = document.getElementById('input-settings-p-name');
@@ -1307,7 +1307,7 @@ function initPortfolioModals() {
         }
     };
 
-    window.handleDeleteActivePortfolio = function() {
+    window.handleDeleteActivePortfolio = function () {
         const settingsPId = document.getElementById('settings-p-id');
         const modalPSettings = document.getElementById('portfolio-settings-modal');
         const pid = settingsPId?.value || portfolioState.activePortfolioId;
@@ -1536,7 +1536,7 @@ function renderPortfolioSummary() {
     if (elTrapsStat) elTrapsStat.textContent = `${(diag.stage4_traps || []).length} Traps (-₹${Math.abs(dSumm.total_trapped_loss || 0).toLocaleString('en-IN')})`;
 
     if (elInvested) elInvested.textContent = `₹${(s.total_invested || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
-    if (elCapDeployed) elCapDeployed.textContent = `${s.capital_deployed_pct || 0}% of ₹${((s.total_capital || 500000)/100000).toFixed(1)}L Capital`;
+    if (elCapDeployed) elCapDeployed.textContent = `${s.capital_deployed_pct || 0}% of ₹${((s.total_capital || 500000) / 100000).toFixed(1)}L Capital`;
     if (elValue) elValue.textContent = `₹${(s.current_portfolio_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
     if (elActiveCount) elActiveCount.textContent = `${s.active_positions_count || 0} Active Positions (${s.active_positions_count >= 4 && s.active_positions_count <= 8 ? 'Optimal Diversification' : 'Target 4-8 Stocks'})`;
 
@@ -2216,7 +2216,7 @@ function renderAllocationBreakdown() {
                         <i class="fa-solid fa-chart-pie text-cyan"></i> Portfolio Capital Allocation & Position Weights
                     </h3>
                     <p style="margin:0.25rem 0 0 0; font-size:0.8rem; color:var(--text-secondary);">
-                        Total Deployed: <strong>₹${totalInvested.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong> (${summary.capital_deployed_pct || 0}% of ₹${(totalCapital/100000).toFixed(1)}L Capital) across <strong>${holdings.length} stocks</strong>
+                        Total Deployed: <strong>₹${totalInvested.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong> (${summary.capital_deployed_pct || 0}% of ₹${(totalCapital / 100000).toFixed(1)}L Capital) across <strong>${holdings.length} stocks</strong>
                     </p>
                 </div>
                 <div style="font-size:0.8rem; background:rgba(6, 182, 212, 0.1); border:1px solid rgba(6, 182, 212, 0.25); border-radius:8px; padding:0.4rem 0.8rem; color:var(--accent-cyan);">
@@ -2227,11 +2227,11 @@ function renderAllocationBreakdown() {
             <!-- Multi-Color Segmented Allocation Bar -->
             <div style="display:flex; height:20px; width:100%; border-radius:10px; overflow:hidden; background:rgba(255,255,255,0.05); margin-bottom:1.5rem; border:1px solid rgba(255,255,255,0.1);">
                 ${sorted.map((h, idx) => {
-                    const color = colors[idx % colors.length];
-                    const alloc = h.allocation_pct || (totalInvested > 0 ? ((h.invested_capital / totalInvested) * 100).toFixed(1) : 0);
-                    if (alloc <= 0) return '';
-                    return `<div style="width:${alloc}%; background:${color}; height:100%;" title="${h.symbol}: ${alloc}% (₹${Math.round(h.invested_capital).toLocaleString('en-IN')})"></div>`;
-                }).join('')}
+        const color = colors[idx % colors.length];
+        const alloc = h.allocation_pct || (totalInvested > 0 ? ((h.invested_capital / totalInvested) * 100).toFixed(1) : 0);
+        if (alloc <= 0) return '';
+        return `<div style="width:${alloc}%; background:${color}; height:100%;" title="${h.symbol}: ${alloc}% (₹${Math.round(h.invested_capital).toLocaleString('en-IN')})"></div>`;
+    }).join('')}
             </div>
 
             <!-- Stock Allocation Table -->
@@ -2250,16 +2250,16 @@ function renderAllocationBreakdown() {
                     </thead>
                     <tbody>
                         ${sorted.map((h, idx) => {
-                            const alloc = parseFloat(h.allocation_pct || (totalInvested > 0 ? ((h.invested_capital / totalInvested) * 100).toFixed(2) : 0));
-                            const color = colors[idx % colors.length];
-                            let riskBadge = '<span class="badge badge-success">Balanced (&le;15%)</span>';
-                            if (alloc > 25) {
-                                riskBadge = '<span class="badge badge-danger">High Concentration (&gt;25%)</span>';
-                            } else if (alloc > 15) {
-                                riskBadge = '<span class="badge badge-warning">Moderate (15-25%)</span>';
-                            }
+        const alloc = parseFloat(h.allocation_pct || (totalInvested > 0 ? ((h.invested_capital / totalInvested) * 100).toFixed(2) : 0));
+        const color = colors[idx % colors.length];
+        let riskBadge = '<span class="badge badge-success">Balanced (&le;15%)</span>';
+        if (alloc > 25) {
+            riskBadge = '<span class="badge badge-danger">High Concentration (&gt;25%)</span>';
+        } else if (alloc > 15) {
+            riskBadge = '<span class="badge badge-warning">Moderate (15-25%)</span>';
+        }
 
-                            return `
+        return `
                                 <tr>
                                     <td>
                                         <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -2284,7 +2284,7 @@ function renderAllocationBreakdown() {
                                     <td>${riskBadge}</td>
                                 </tr>
                             `;
-                        }).join('')}
+    }).join('')}
                     </tbody>
                 </table>
             </div>
@@ -2433,13 +2433,13 @@ function renderHistory() {
             </thead>
             <tbody>
                 ${portfolioState.history.map(t => {
-                    const isWin = (t.realized_pnl || 0) > 0;
-                    const pnlSign = isWin ? '+' : '';
-                    const annRet = t.ann_return_pct !== undefined ? t.ann_return_pct : (t.hold_days > 0 ? ((t.return_pct || 0) * 365 / t.hold_days).toFixed(1) : t.return_pct);
-                    const annColor = annRet >= 0 ? 'text-green' : 'text-red';
-                    const annSign = annRet >= 0 ? '+' : '';
+        const isWin = (t.realized_pnl || 0) > 0;
+        const pnlSign = isWin ? '+' : '';
+        const annRet = t.ann_return_pct !== undefined ? t.ann_return_pct : (t.hold_days > 0 ? ((t.return_pct || 0) * 365 / t.hold_days).toFixed(1) : t.return_pct);
+        const annColor = annRet >= 0 ? 'text-green' : 'text-red';
+        const annSign = annRet >= 0 ? '+' : '';
 
-                    return `
+        return `
                         <tr>
                             <td>
                                 <strong>${t.symbol}</strong><br>
@@ -2475,7 +2475,7 @@ function renderHistory() {
                             </td>
                         </tr>
                     `;
-                }).join('')}
+    }).join('')}
             </tbody>
         </table>
     `;
