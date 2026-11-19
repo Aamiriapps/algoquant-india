@@ -315,7 +315,7 @@ function setMode(newMode) {
         if (el.bannerSetupVal) el.bannerSetupVal.textContent = 'Mcap > ₹500 Cr | Price > 200 DMA | 50 DMA > 200 DMA | RSI 60-100 | NP & Sales YoY Growth | ROCE > 15% | D/E < 1';
         el.tabCoreLabel.textContent = 'Screener.in Momentum Rules (Full List)';
         el.signalsHeading.textContent = 'All Qualified Momentum & Fundamental Growth Leaders';
-        el.signalsDesc.textContent = 'Full list screened via exact Screener.in 11 criteria (Market Cap, ROCE, YoY Profits/Sales, 50/200 DMA, RSI)';
+        el.signalsDesc.innerHTML = 'Showing all 59 qualified stocks directly from your saved Screener: <a href="https://www.screener.in/screens/4103939/momentum-stocks-by-mohammed-s-ali/" target="_blank" style="color: var(--accent-gold); font-weight: 600; text-decoration: underline;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Momentum Stocks by Mohammed S Ali (Screener.in)</a>';
         el.loadingText.textContent = 'Scanning Screener.in Momentum Stocks (Full List)...';
         el.kpiTriggersLabel.textContent = 'Momentum Stocks';
         el.kpiTriggersSub.textContent = 'Qualified leaders found';
