@@ -149,6 +149,15 @@ def enrich_momentum_stock(stock: dict) -> dict:
     """
     sym = stock["symbol"]
     name = stock["name"]
+    
+    # Map BSE-only numeric tickers to recognized symbols for live Yahoo candles and interactive charts
+    if sym == "512399":
+        sym = "SERA"
+        name = "Sera Investments & Finance (BSE: 512399)"
+    elif sym == "515008":
+        sym = "MODINSU"
+        name = "Modern Insulators Ltd (BSE: 515008)"
+        
     screener_cmp = float(stock.get("cmp", 0.0))
     screener_dma200 = float(stock.get("dma200", 0.0))
     screener_rsi = float(stock.get("rsi", 65.0))

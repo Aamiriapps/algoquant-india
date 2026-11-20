@@ -493,8 +493,12 @@ def fetch_stock_data(symbol: str, range_str: str = "1y", interval: str = "1d", f
         "NESTLE": "NESTLEIND",
         "L&T": "LT",
         "LARSEN": "LT",
-        "MCDOWELL": "MCDOWELL-N",
-        "UNITEDSPIRITS": "MCDOWELL-N",
+        "MCDOWELL": "UNITDSPR",
+        "UNITEDSPIRITS": "UNITDSPR",
+        "512399": "SERA",
+        "SERA": "SERA",
+        "515008": "MODINSU",
+        "MODINSU": "MODINSU",
         "DUMMYHEG": "HEG"
     }
     resolved = ALIAS_MAP.get(clean, clean)

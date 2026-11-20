@@ -181,6 +181,10 @@ function initEventListeners() {
     const btnRefreshUniv = document.getElementById('btn-refresh-universe');
     if (btnRefreshUniv) {
         btnRefreshUniv.addEventListener('click', async () => {
+            if (state.mode === 'momentum') {
+                fetchScanData(true);
+                return;
+            }
             btnRefreshUniv.disabled = true;
             btnRefreshUniv.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-cyan"></i> Discovering Leaders...';
             try {
@@ -324,7 +328,11 @@ function setMode(newMode) {
             state.sortBy = 'rsi_desc';
             el.selectSort.value = 'rsi_desc';
         }
+        const univText = document.getElementById('btn-universe-text');
+        if (univText) univText.textContent = 'Refresh Screener.in';
     } else {
+        const univText = document.getElementById('btn-universe-text');
+        if (univText) univText.textContent = 'Auto-Refresh Momentum Universe';
         el.btnModeDaily.classList.remove('active');
         if (el.btnModeMomentum) el.btnModeMomentum.classList.remove('active');
         el.btnModeIntraday.classList.add('active');
@@ -375,9 +383,12 @@ async function fetchScanData(forceRefresh = false) {
 
         renderSignals();
 
-        // If background worker is currently updating, show indicator without auto-refresh loop
+        // If background worker is currently updating, show indicator and auto re-check
         if (data.is_updating) {
-            el.btnRefresh.innerHTML = '<i class="fa-solid fa-circle-notch text-cyan"></i> Scan Updating (Click to Reload)';
+            el.btnRefresh.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-cyan"></i> Updating in background...';
+            setTimeout(() => {
+                fetchScanData(false);
+            }, 6000);
         }
     } catch (err) {
         console.error('Scan Error:', err);
@@ -408,8 +419,9 @@ function renderSignals() {
     });
 
     // Filter by Strategy Tab (Enhanced Pro vs Core)
-    if (state.activeTab === 'enhanced') {
-        filtered = filtered.filter(s => s.enhanced_option.vol_confirmed);
+    // Note: Momentum mode displays all qualified screen leaders across tabs
+    if (state.activeTab === 'enhanced' && state.mode !== 'momentum') {
+        filtered = filtered.filter(s => s.enhanced_option && s.enhanced_option.vol_confirmed);
     }
 
     // Filter by Filter Pill
@@ -594,17 +606,24 @@ function createSignalCard(s) {
                 <span class="m-val text-green">${s.fundamentals.roce}%</span>
             </div>
             <div class="m-item">
-                <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-sack-dollar"></i> Net Profit (YoY)</span>
-                <span class="m-val text-green">₹${(s.fundamentals.np || 0).toLocaleString('en-IN')} Cr (+${s.fundamentals.np_growth_pct}%)</span>
+                <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-sack-dollar"></i> ${state.mode === 'momentum' ? 'Latest Qtr NP' : 'Net Profit (YoY)'}</span>
+                <span class="m-val ${(s.fundamentals.np_growth_pct || 0) >= 0 ? 'text-green' : 'text-red'}">₹${(s.fundamentals.np || 0).toLocaleString('en-IN')} Cr (${(s.fundamentals.np_growth_pct || 0) > 0 ? '+' : ''}${s.fundamentals.np_growth_pct || 0}%)</span>
+                ${state.mode === 'momentum' ? '<div style="font-size:0.7rem; color:var(--text-secondary); margin-top:2px;">Annual NP &gt; ₹100 Cr &bull; YoY Growth Passed</div>' : ''}
             </div>
             <div class="m-item">
-                <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-cart-shopping"></i> Sales (YoY)</span>
-                <span class="m-val text-green">₹${(s.fundamentals.sales || 0).toLocaleString('en-IN')} Cr (+${s.fundamentals.sales_growth_pct}%)</span>
+                <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-cart-shopping"></i> ${state.mode === 'momentum' ? 'Latest Qtr Sales' : 'Sales (YoY)'}</span>
+                <span class="m-val ${(s.fundamentals.sales_growth_pct || 0) >= 0 ? 'text-green' : 'text-red'}">₹${(s.fundamentals.sales || 0).toLocaleString('en-IN')} Cr (${(s.fundamentals.sales_growth_pct || 0) > 0 ? '+' : ''}${s.fundamentals.sales_growth_pct || 0}%)</span>
+                ${state.mode === 'momentum' ? '<div style="font-size:0.7rem; color:var(--text-secondary); margin-top:2px;">Annual Sales YoY Growth Passed</div>' : ''}
             </div>
             <div class="m-item">
                 <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-scale-balanced"></i> Debt to Equity</span>
-                <span class="m-val" style="color: ${s.fundamentals.debt_to_equity <= 0.5 ? 'var(--bullish-green)' : '#fff'};">${s.fundamentals.debt_to_equity}</span>
+                <span class="m-val" style="color: var(--bullish-green);">${s.fundamentals.debt_to_equity}</span>
             </div>
+            ${s.fundamentals.pe ? `
+            <div class="m-item">
+                <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-scale-unbalanced"></i> P/E</span>
+                <span class="m-val" style="color: #fff;">${s.fundamentals.pe}</span>
+            </div>` : ''}
         </div>
         ` : ''}
 
