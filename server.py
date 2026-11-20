@@ -69,13 +69,26 @@ def load_disk_cache(mode: str):
             print(f"Error loading {mode} cache from disk: {e}")
     return None
 
+def sanitize_payload(obj):
+    """Recursively purges any NaN or Inf floats to guarantee strict, crash-proof browser JSON."""
+    if isinstance(obj, float):
+        if np.isnan(obj) or np.isinf(obj):
+            return 0.0
+        return obj
+    elif isinstance(obj, dict):
+        return {k: sanitize_payload(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_payload(v) for v in obj]
+    return obj
+
 def save_disk_cache(mode: str, data: dict):
     if not data:
         return
     file_path = os.path.join(CACHE_DIR, f"scan_{mode}.json")
     try:
+        clean_data = sanitize_payload(data)
         with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(data, f)
+            json.dump(clean_data, f, indent=2)
     except Exception as e:
         print(f"Error saving {mode} cache to disk: {e}")
 
@@ -110,9 +123,10 @@ def background_cache_worker(mode: str):
             data = run_momentum_screener(top_n=None, force_refresh=True)
         else:
             data = run_full_scan(mode=mode)
-        SCAN_CACHE[mode]["data"] = data
+        clean_data = sanitize_payload(data)
+        SCAN_CACHE[mode]["data"] = clean_data
         SCAN_CACHE[mode]["last_scanned"] = datetime.now().isoformat()
-        save_disk_cache(mode, data)
+        save_disk_cache(mode, clean_data)
         triggers = data.get("total_triggers_found", 0) if data else 0
         print(f"[{mode.upper()}] Background scan complete! {triggers} triggers found.")
     except Exception as e:
@@ -258,7 +272,7 @@ def api_scan():
             for _ in range(20):
                 time.sleep(0.5)
                 if SCAN_CACHE[mode]["data"] is not None:
-                    return jsonify(SCAN_CACHE[mode]["data"])
+                    return jsonify(sanitize_payload(SCAN_CACHE[mode]["data"]))
                 if not SCAN_CACHE[mode]["is_scanning"]:
                     break
     else:
@@ -268,16 +282,17 @@ def api_scan():
         if SCAN_CACHE[mode]["data"] is not None:
             res = dict(SCAN_CACHE[mode]["data"])
             res["is_updating"] = True
-            return jsonify(res)
+            return jsonify(sanitize_payload(res))
         
     if mode == "momentum" and run_momentum_screener:
         results = run_momentum_screener(top_n=None, force_refresh=force_refresh)
     else:
         results = run_full_scan(mode=mode, days_lookback=days, bars_lookback=bars, buy_only=buy_only)
-    SCAN_CACHE[mode]["data"] = results
+    clean_results = sanitize_payload(results)
+    SCAN_CACHE[mode]["data"] = clean_results
     SCAN_CACHE[mode]["last_scanned"] = datetime.now().isoformat()
-    save_disk_cache(mode, results)
-    return jsonify(results)
+    save_disk_cache(mode, clean_results)
+    return jsonify(clean_results)
 
 @app.route("/api/universe", methods=["GET"])
 def api_get_universe():

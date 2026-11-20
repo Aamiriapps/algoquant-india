@@ -46,6 +46,32 @@ RAW_SCREENER_CACHE = os.path.join(CACHE_DIR, "screener_4103939_raw.json")
 
 USER_SCREEN_URL = "https://www.screener.in/screens/4103939/momentum-stocks-by-mohammed-s-ali/"
 
+def safe_num(val, default=0.0, ndigits=2):
+    """Safely converts any indicator value or numpy float into a clean, JSON-serializable float without NaN or Inf."""
+    if val is None:
+        return default
+    try:
+        if pd.isna(val) or np.isnan(val) or np.isinf(val):
+            return default
+        f = float(val)
+        if np.isnan(f) or np.isinf(f):
+            return default
+        return round(f, ndigits) if ndigits is not None else f
+    except Exception:
+        return default
+
+def sanitize_dict_for_json(data):
+    """Recursively replaces any NaN or Inf floats with safe defaults to guarantee strict browser JSON compatibility."""
+    if isinstance(data, dict):
+        return {k: sanitize_dict_for_json(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_dict_for_json(v) for v in data]
+    elif isinstance(data, float):
+        if np.isnan(data) or np.isinf(data):
+            return 0.0
+        return data
+    return data
+
 def fetch_screener_in_screen(screen_id: str = "4103939", max_pages: int = 10) -> list:
     """
     Fetches all matching stocks across all paginated pages from screener.in.
@@ -170,31 +196,31 @@ def enrich_momentum_stock(stock: dict) -> dict:
         pass
 
     if df is not None and len(df) >= 20:
-        latest_close = float(df['close'].iloc[-1])
+        latest_close = safe_num(df['close'].iloc[-1], screener_cmp, 2)
         curr_close = latest_close if latest_close > 0 else screener_cmp
         
         # 50 DMA and 200 DMA
-        dma50 = float(df['close'].tail(50).mean()) if len(df) >= 50 else float(df['close'].mean())
-        dma200 = float(df['close'].tail(200).mean()) if len(df) >= 200 else (screener_dma200 or curr_close * 0.85)
+        dma50 = safe_num(df['close'].tail(50).mean() if len(df) >= 50 else df['close'].mean(), curr_close * 0.96, 2)
+        dma200 = safe_num(df['close'].tail(200).mean() if len(df) >= 200 else (screener_dma200 or curr_close * 0.85), curr_close * 0.85, 2)
         
         # Supertrend
-        curr_st = float(df['supertrend'].iloc[-1]) if 'supertrend' in df.columns else round(curr_close * 0.94, 2)
-        curr_st_dir = int(df['st_dir'].iloc[-1]) if 'st_dir' in df.columns else 1
+        curr_st = safe_num(df['supertrend'].iloc[-1] if 'supertrend' in df.columns else (curr_close * 0.94), curr_close * 0.94, 2)
+        curr_st_dir = int(df['st_dir'].iloc[-1]) if ('st_dir' in df.columns and not pd.isna(df['st_dir'].iloc[-1])) else 1
         
         # ATR & RSI
-        curr_atr = float(df['atr'].iloc[-1]) if 'atr' in df.columns else round(curr_close * 0.02, 2)
-        curr_rsi = screener_rsi if screener_rsi > 0 else float(df['rsi14'].iloc[-1] if 'rsi14' in df.columns else 65.0)
+        curr_atr = safe_num(df['atr'].iloc[-1] if 'atr' in df.columns else (curr_close * 0.02), curr_close * 0.02, 2)
+        curr_rsi = screener_rsi if screener_rsi > 0 else safe_num(df['rsi14'].iloc[-1] if 'rsi14' in df.columns else 65.0, 65.0, 1)
         
         # Volume & Momentum indicators
-        curr_vol = float(df["volume"].iloc[-1])
-        avg_vol20 = float(df["vol_sma20"].iloc[-1]) if "vol_sma20" in df.columns else float(df["volume"].tail(20).mean())
-        vol_ratio = (curr_vol / avg_vol20) if avg_vol20 > 0 else 1.0
+        curr_vol = safe_num(df["volume"].iloc[-1], 10000.0, 0)
+        avg_vol20 = safe_num(df["vol_sma20"].iloc[-1] if "vol_sma20" in df.columns else df["volume"].tail(20).mean(), 10000.0, 0)
+        vol_ratio = safe_num((curr_vol / avg_vol20) if avg_vol20 > 0 else 1.0, 1.0, 2)
         
-        curr_adx = float(df["adx14"].iloc[-1]) if "adx14" in df.columns else 25.0
-        curr_macd_h = float(df["macd_hist"].iloc[-1]) if "macd_hist" in df.columns else 0.5
-        curr_roc20 = float(df["roc20"].iloc[-1]) if "roc20" in df.columns else 5.0
-        curr_roc60 = float(df["roc60"].iloc[-1]) if "roc60" in df.columns else 15.0
-        curr_52w_gap = float(df["pct_from_52w_high"].iloc[-1]) if "pct_from_52w_high" in df.columns else 0.0
+        curr_adx = safe_num(df["adx14"].iloc[-1] if "adx14" in df.columns else 25.0, 25.0, 1)
+        curr_macd_h = safe_num(df["macd_hist"].iloc[-1] if "macd_hist" in df.columns else 0.5, 0.5, 3)
+        curr_roc20 = safe_num(df["roc20"].iloc[-1] if "roc20" in df.columns else 5.0, 5.0, 2)
+        curr_roc60 = safe_num(df["roc60"].iloc[-1] if "roc60" in df.columns else 15.0, 15.0, 2)
+        curr_52w_gap = safe_num(df["pct_from_52w_high"].iloc[-1] if "pct_from_52w_high" in df.columns else 0.0, 0.0, 1)
         latest_date_str = str(df.index[-1].date()) if hasattr(df.index[-1], 'date') else str(df.index[-1])[:10]
         has_ohlcv = True
     else:
@@ -398,10 +424,13 @@ def run_momentum_screener(top_n: int = None, max_workers: int = 30, force_refres
         }
     }
     
+    # Sanitize any residual NaN / Inf values for strict browser JSON compatibility
+    result = sanitize_dict_for_json(result)
+
     # Save to disk cache
     try:
         with open(CACHE_FILE, "w", encoding="utf-8") as f:
-            json.dump(result, f, indent=2)
+            json.dump(result, f, indent=2, allow_nan=False)
     except Exception as e:
         print(f"Error saving momentum scan cache: {e}")
         
