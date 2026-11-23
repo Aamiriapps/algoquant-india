@@ -61,6 +61,14 @@
                     </div>
                 </button>
 
+                <button class="nav-section-btn" data-mode="rsi" id="btn-mode-rsi">
+                    <i class="fa-solid fa-chart-line" style="color: var(--accent-cyan);"></i>
+                    <div>
+                        <div class="nav-btn-title">RSI Strategy</div>
+                        <div class="nav-btn-desc">60-60-50 Multi-TF Pullback & Trailing</div>
+                    </div>
+                </button>
+
                 <button class="nav-section-btn" data-mode="intraday" id="btn-mode-intraday">
                     <i class="fa-solid fa-bolt-lightning"></i>
                     <div>
@@ -190,6 +198,9 @@
                     <button class="pill pill-unsuitable" data-filter="not_suitable">
                         <i class="fa-solid fa-shield-halved"></i> Not Suitable / Wait
                     </button>
+                    <button class="pill" data-filter="flagged" id="pill-flagged-trades" style="border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">
+                        <i class="fa-solid fa-flag text-red"></i> Flagged Trades Only
+                    </button>
                 </div>
 
                 <div class="sort-selector-wrap" id="sort-selector-wrap" style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto;">
@@ -197,8 +208,11 @@
                         <i class="fa-solid fa-arrow-down-wide-short text-cyan"></i> Sort:
                     </label>
                     <select id="select-sort" class="form-control" style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 0.38rem 0.65rem; font-size: 0.8rem; font-weight: 600; cursor: pointer;">
+                        <option value="rsi_near_50">Daily RSI: Near 50 (Best Retest Entry)</option>
                         <option value="rsi_desc">RSI: High to Low (Default)</option>
                         <option value="rsi_asc">RSI: Low to High</option>
+                        <option value="rsi_weekly_desc">Weekly RSI: High to Low</option>
+                        <option value="rsi_monthly_desc">Monthly RSI: High to Low</option>
                         <option value="roce_desc">ROCE %: High to Low</option>
                         <option value="np_growth_desc">Net Profit Growth: High to Low</option>
                         <option value="sales_growth_desc">Sales Growth: High to Low</option>

@@ -32,6 +32,7 @@ const el = {
     // Mode Switcher Buttons
     btnModeDaily: document.getElementById('btn-mode-daily'),
     btnModeMomentum: document.getElementById('btn-mode-momentum'),
+    btnModeRsi: document.getElementById('btn-mode-rsi'),
     btnModeIntraday: document.getElementById('btn-mode-intraday'),
     btnModePortfolio: document.getElementById('btn-mode-portfolio'),
     screenerView: document.getElementById('screener-view'),
@@ -151,6 +152,13 @@ function initEventListeners() {
         el.btnModeMomentum.addEventListener('click', () => {
             if (state.mode === 'momentum') return;
             setMode('momentum');
+        });
+    }
+
+    if (el.btnModeRsi) {
+        el.btnModeRsi.addEventListener('click', () => {
+            if (state.mode === 'rsi') return;
+            setMode('rsi');
         });
     }
 
@@ -278,6 +286,7 @@ function setMode(newMode) {
     if (newMode === 'portfolio') {
         el.btnModeDaily.classList.remove('active');
         if (el.btnModeMomentum) el.btnModeMomentum.classList.remove('active');
+        if (el.btnModeRsi) el.btnModeRsi.classList.remove('active');
         el.btnModeIntraday.classList.remove('active');
         el.btnModePortfolio.classList.add('active');
 
@@ -297,6 +306,7 @@ function setMode(newMode) {
     if (newMode === 'daily') {
         el.btnModeDaily.classList.add('active');
         if (el.btnModeMomentum) el.btnModeMomentum.classList.remove('active');
+        if (el.btnModeRsi) el.btnModeRsi.classList.remove('active');
         el.btnModeIntraday.classList.remove('active');
 
         el.headerStrategySubtitle.textContent = 'Daily 50 EMA + Supertrend (10, 3) Swing Screener';
@@ -312,6 +322,7 @@ function setMode(newMode) {
     } else if (newMode === 'momentum') {
         el.btnModeDaily.classList.remove('active');
         if (el.btnModeMomentum) el.btnModeMomentum.classList.add('active');
+        if (el.btnModeRsi) el.btnModeRsi.classList.remove('active');
         el.btnModeIntraday.classList.remove('active');
 
         el.headerStrategySubtitle.textContent = 'Screener.in Momentum & Growth Strategy (All Qualified Stocks)';
@@ -330,11 +341,34 @@ function setMode(newMode) {
         }
         const univText = document.getElementById('btn-universe-text');
         if (univText) univText.textContent = 'Refresh Screener.in';
+    } else if (newMode === 'rsi') {
+        el.btnModeDaily.classList.remove('active');
+        if (el.btnModeMomentum) el.btnModeMomentum.classList.remove('active');
+        if (el.btnModeRsi) el.btnModeRsi.classList.add('active');
+        el.btnModeIntraday.classList.remove('active');
+
+        el.headerStrategySubtitle.textContent = 'RSI 60-60-50 Multi-Timeframe Pullback & Trailing Strategy';
+        el.bannerModeVal.textContent = 'RSI Three-Tiered Framework (Monthly ≥60, Weekly ≥60, Daily ~50 Retest)';
+        if (el.bannerSetupVal) el.bannerSetupVal.textContent = 'Monthly RSI ≥ 60 | Weekly RSI ≥ 60 | Daily RSI ~50 Pullback Bounce | Exit strictly on Daily RSI < 50';
+        el.tabCoreLabel.textContent = 'RSI Multi-Timeframe Framework (Monthly/Weekly/Daily)';
+        el.signalsHeading.textContent = 'RSI 60-60-50 Multi-TF Qualified Setups (Nifty 500 Universe)';
+        el.signalsDesc.innerHTML = '<strong style="color:var(--accent-gold);">Psychology First:</strong> <em>"80% of trading is psychology and 20% is strategy; keeping it simple helps traders remain disciplined and avoid emotional decision-making."</em> &bull; Trailing SL with Exit strictly when Daily RSI breaks below 50.';
+        el.loadingText.textContent = 'Scanning Nifty 500 Multi-TF (Monthly, Weekly, Daily RSI)...';
+        el.kpiTriggersLabel.textContent = 'RSI Setups';
+        el.kpiTriggersSub.textContent = '60-60-50 Setups Found';
+        el.calcRiskPct.value = '1.0';
+        if (el.selectSort) {
+            state.sortBy = 'rsi_near_50';
+            el.selectSort.value = 'rsi_near_50';
+        }
+        const univText = document.getElementById('btn-universe-text');
+        if (univText) univText.textContent = 'Refresh RSI Scan';
     } else {
         const univText = document.getElementById('btn-universe-text');
         if (univText) univText.textContent = 'Auto-Refresh Momentum Universe';
         el.btnModeDaily.classList.remove('active');
         if (el.btnModeMomentum) el.btnModeMomentum.classList.remove('active');
+        if (el.btnModeRsi) el.btnModeRsi.classList.remove('active');
         el.btnModeIntraday.classList.add('active');
 
         el.headerStrategySubtitle.textContent = 'Intraday 200 EMA + Supertrend (10, 3) Momentum Screener';
@@ -419,8 +453,8 @@ function renderSignals() {
     });
 
     // Filter by Strategy Tab (Enhanced Pro vs Core)
-    // Note: Momentum mode displays all qualified screen leaders across tabs
-    if (state.activeTab === 'enhanced' && state.mode !== 'momentum') {
+    // Note: Momentum and RSI modes display all qualified screen leaders across tabs
+    if (state.activeTab === 'enhanced' && state.mode !== 'momentum' && state.mode !== 'rsi') {
         filtered = filtered.filter(s => s.enhanced_option && s.enhanced_option.vol_confirmed);
     }
 
@@ -429,6 +463,8 @@ function renderSignals() {
         filtered = filtered.filter(s => s.is_actionable);
     } else if (state.activeFilter === 'not_suitable') {
         filtered = filtered.filter(s => !s.is_actionable);
+    } else if (state.activeFilter === 'flagged') {
+        filtered = filtered.filter(s => s.is_flagged);
     } else if (state.activeFilter === 'BUY') {
         filtered = filtered.filter(s => s.signal_type === 'BUY');
     } else if (state.activeFilter === 'SELL') {
@@ -445,10 +481,20 @@ function renderSignals() {
     }
 
     // User Sort Order Application
-    if (state.sortBy === 'rsi_desc') {
-        filtered.sort((a, b) => (parseFloat(b.rsi14) || 0) - (parseFloat(a.rsi14) || 0));
+    if (state.sortBy === 'rsi_near_50') {
+        filtered.sort((a, b) => {
+            const rsiA = parseFloat(a.daily_rsi !== undefined ? a.daily_rsi : a.rsi14) || 50;
+            const rsiB = parseFloat(b.daily_rsi !== undefined ? b.daily_rsi : b.rsi14) || 50;
+            return Math.abs(rsiA - 50.0) - Math.abs(rsiB - 50.0);
+        });
+    } else if (state.sortBy === 'rsi_desc') {
+        filtered.sort((a, b) => (parseFloat(b.rsi14 || b.daily_rsi) || 0) - (parseFloat(a.rsi14 || a.daily_rsi) || 0));
     } else if (state.sortBy === 'rsi_asc') {
-        filtered.sort((a, b) => (parseFloat(a.rsi14) || 0) - (parseFloat(b.rsi14) || 0));
+        filtered.sort((a, b) => (parseFloat(a.rsi14 || a.daily_rsi) || 0) - (parseFloat(b.rsi14 || b.daily_rsi) || 0));
+    } else if (state.sortBy === 'rsi_weekly_desc') {
+        filtered.sort((a, b) => (parseFloat(b.weekly_rsi) || 0) - (parseFloat(a.weekly_rsi) || 0));
+    } else if (state.sortBy === 'rsi_monthly_desc') {
+        filtered.sort((a, b) => (parseFloat(b.monthly_rsi) || 0) - (parseFloat(a.monthly_rsi) || 0));
     } else if (state.sortBy === 'roce_desc') {
         filtered.sort((a, b) => ((b.fundamentals ? b.fundamentals.roce : 0) - (a.fundamentals ? a.fundamentals.roce : 0)));
     } else if (state.sortBy === 'np_growth_desc') {
@@ -595,6 +641,48 @@ function createSignalCard(s) {
             </div>` : ''}
         </div>
 
+        ${state.mode === 'rsi' ? `
+        <!-- RSI Three-Tiered Framework Strip -->
+        <div class="metrics-strip" style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.35); border-radius: 8px; margin-top: 0.5rem; margin-bottom: 0.5rem; padding: 0.6rem 0.8rem;">
+            <div class="m-item">
+                <span class="m-label" style="color: var(--accent-cyan);"><i class="fa-solid fa-calendar-days"></i> Monthly RSI (≥60)</span>
+                <span class="m-val text-green" style="font-weight:700;">${(s.monthly_rsi || 0).toFixed(1)} <small style="color:#4ade80;">✓ Strong Uptrend</small></span>
+            </div>
+            <div class="m-item">
+                <span class="m-label" style="color: var(--accent-cyan);"><i class="fa-solid fa-calendar-week"></i> Weekly RSI (≥60)</span>
+                <span class="m-val text-green" style="font-weight:700;">${(s.weekly_rsi || 0).toFixed(1)} <small style="color:#4ade80;">✓ Trend Confirmed</small></span>
+            </div>
+            <div class="m-item">
+                <span class="m-label" style="color: var(--accent-gold);"><i class="fa-solid fa-crosshairs"></i> Daily RSI (~50 Retest)</span>
+                <span class="m-val" style="color: #fbbf24; font-weight:700;">${(s.daily_rsi || s.rsi14 || 0).toFixed(1)} <small style="color:#fde047;">${s.is_retest_50 ? '★ ~50 Bounce Setup' : 'Pullback'}</small></span>
+            </div>
+            <div class="m-item">
+                <span class="m-label" style="color: var(--bullish-green);"><i class="fa-solid fa-route"></i> Target Method</span>
+                <span class="m-val text-green" style="font-weight:700;">No Fixed Target <small style="color:var(--text-secondary);">(Ride Trade)</small></span>
+            </div>
+            <div class="m-item">
+                <span class="m-label" style="color: var(--bearish-red);"><i class="fa-solid fa-shield-halved"></i> Trailing SL Level</span>
+                <span class="m-val text-red" style="font-weight:700;">₹${(s.trailing_sl || s.stop_loss || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <div style="font-size:0.7rem; color:var(--text-secondary); margin-top:2px;">Exit strictly if Daily RSI &lt; 50</div>
+            </div>
+        </div>
+
+        <!-- RSI Live Trailing Alert Banner & Flagging -->
+        <div style="background: ${s.is_flagged ? (s.exit_alert ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.12)') : 'rgba(15, 23, 42, 0.6)'}; border: 1px solid ${s.is_flagged ? (s.exit_alert ? '#ef4444' : '#22c55e') : 'var(--border-color)'}; border-radius: 8px; padding: 0.5rem 0.8rem; margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span class="badge ${s.is_flagged ? (s.exit_alert ? 'badge-danger' : 'badge-success') : 'badge-neutral'}" style="font-size:0.75rem;">
+                    <i class="fa-solid ${s.is_flagged ? 'fa-flag' : 'fa-flag-checkered'}"></i> ${s.is_flagged ? (s.exit_alert ? 'EXIT SIGNAL TRIGGERED' : 'TRADE FLAGGED & MONITORED') : 'UNFLAGGED'}
+                </span>
+                <span style="font-size: 0.8rem; color: ${s.exit_alert ? '#fca5a5' : 'var(--text-primary)'}; font-weight: 500;">
+                    ${s.exit_alert ? `🚨 <strong>Daily RSI broke below 50 (${(s.daily_rsi || 0).toFixed(1)})!</strong> System Exit Rule triggered.` : `Trailing SL: ₹${(s.trailing_sl || s.stop_loss || 0).toFixed(2)} &bull; Status: Daily RSI is ${(s.daily_rsi || 0).toFixed(1)} (Above 50 - Hold & Ride)`}
+                </span>
+            </div>
+            <button class="btn btn-sm ${s.is_flagged ? 'btn-danger' : 'btn-secondary'} btn-toggle-rsi-flag" data-symbol="${s.symbol}" data-price="${s.current_price}" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+                <i class="fa-solid fa-flag"></i> ${s.is_flagged ? 'Unflag Trade' : 'Flag This Trade'}
+            </button>
+        </div>
+        ` : ''}
+
         ${s.fundamentals ? `
         <div class="metrics-strip" style="background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 8px; margin-top: 0.5rem; margin-bottom: 0.75rem;">
             <div class="m-item">
@@ -681,6 +769,37 @@ function createSignalCard(s) {
             btn.dataset.t1
         );
     });
+
+    const btnFlag = card.querySelector('.btn-toggle-rsi-flag');
+    if (btnFlag) {
+        btnFlag.addEventListener('click', async (e) => {
+            const sym = e.currentTarget.dataset.symbol;
+            const price = parseFloat(e.currentTarget.dataset.price) || 0;
+            try {
+                btnFlag.disabled = true;
+                btnFlag.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+                const res = await fetch('/api/rsi/flag', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: sym, entry_price: price })
+                });
+                const data = await res.json();
+                if (data.status === 'flagged') {
+                    showNotification(`Flagged ${sym} for RSI trailing exit monitoring!`, 'success');
+                    s.is_flagged = true;
+                } else if (data.status === 'unflagged') {
+                    showNotification(`Unflagged ${sym}`, 'info');
+                    s.is_flagged = false;
+                }
+                renderSignals();
+            } catch (err) {
+                console.error(err);
+                showNotification('Failed to update flag state', 'danger');
+            } finally {
+                btnFlag.disabled = false;
+            }
+        });
+    }
 
     return card;
 }

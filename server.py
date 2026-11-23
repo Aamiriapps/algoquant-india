@@ -37,6 +37,13 @@ try:
 except ImportError:
     run_momentum_screener = None
 
+try:
+    from screener_rsi import run_rsi_screener, toggle_flag_rsi_trade, load_flagged_trades
+except ImportError:
+    run_rsi_screener = None
+    toggle_flag_rsi_trade = None
+    load_flagged_trades = None
+
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -92,7 +99,7 @@ def save_disk_cache(mode: str, data: dict):
     except Exception as e:
         print(f"Error saving {mode} cache to disk: {e}")
 
-# Triple-Cache: Daily Swing, Intraday Momentum, and Screener.in Momentum
+# Multi-Strategy Cache: Daily Swing, Intraday Momentum, Screener.in Momentum, and RSI 60-60-50
 SCAN_CACHE = {
     "daily": {
         "data": load_disk_cache("daily"),
@@ -108,6 +115,11 @@ SCAN_CACHE = {
         "data": load_disk_cache("momentum"),
         "last_scanned": None,
         "is_scanning": False
+    },
+    "rsi": {
+        "data": load_disk_cache("rsi"),
+        "last_scanned": None,
+        "is_scanning": False
     }
 }
 
@@ -121,6 +133,8 @@ def background_cache_worker(mode: str):
         print(f"[{mode.upper()}] Starting background scan across Nifty 500 stocks...")
         if mode == "momentum" and run_momentum_screener:
             data = run_momentum_screener(top_n=None, force_refresh=True)
+        elif mode == "rsi" and run_rsi_screener:
+            data = run_rsi_screener(force_refresh=True)
         else:
             data = run_full_scan(mode=mode)
         clean_data = sanitize_payload(data)
@@ -216,7 +230,7 @@ def api_scan():
     - If user requests force refresh, triggers background scan and immediately returns cached data with is_updating=True.
     """
     mode = request.args.get("mode", "daily").lower()
-    if mode not in ["daily", "intraday", "momentum"]:
+    if mode not in ["daily", "intraday", "momentum", "rsi"]:
         mode = "daily"
         
     force_refresh = request.args.get("refresh", "false").lower() == "true"
@@ -226,7 +240,7 @@ def api_scan():
     
     global SCAN_CACHE
     now_ts = time.time()
-    # Cache Max-Age: 5 minutes (300s) for Intraday mode, 30 minutes (1800s) for Daily & Momentum modes
+    # Cache Max-Age: 5 minutes (300s) for Intraday mode, 30 minutes (1800s) for Daily, Momentum & RSI modes
     max_cache_age_sec = 300.0 if mode == "intraday" else 1800.0
 
     if not force_refresh:
@@ -286,6 +300,8 @@ def api_scan():
         
     if mode == "momentum" and run_momentum_screener:
         results = run_momentum_screener(top_n=None, force_refresh=force_refresh)
+    elif mode == "rsi" and run_rsi_screener:
+        results = run_rsi_screener(force_refresh=force_refresh)
     else:
         results = run_full_scan(mode=mode, days_lookback=days, bars_lookback=bars, buy_only=buy_only)
     clean_results = sanitize_payload(results)
@@ -328,6 +344,74 @@ def api_refresh_universe():
         "status": "started",
         "message": "Auto-discovery launched in background. Analyzing momentum leaders across NSE stocks and refreshing screener!"
     })
+
+@app.route("/api/rsi/flag", methods=["POST"])
+def api_rsi_toggle_flag():
+    """Toggles or sets user trade flag for RSI strategy tracking."""
+    if not toggle_flag_rsi_trade:
+        return jsonify({"status": "error", "message": "RSI module not loaded"}), 500
+    try:
+        req = request.get_json() or {}
+        symbol = req.get("symbol", "").strip()
+        entry_price = float(req.get("entry_price", 0.0))
+        notes = req.get("notes", "")
+        if not symbol:
+            return jsonify({"status": "error", "message": "Symbol is required"}), 400
+        res = toggle_flag_rsi_trade(symbol, entry_price=entry_price, notes=notes)
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/api/rsi/flagged", methods=["GET"])
+def api_rsi_flagged():
+    """Returns all currently flagged RSI trades along with live metrics and exit alert status."""
+    if not load_flagged_trades:
+        return jsonify({"status": "error", "flagged": []}), 500
+    try:
+        flagged = load_flagged_trades()
+        # Merge with latest scan results if available to provide real-time alert state
+        scan_data = SCAN_CACHE.get("rsi", {}).get("data") or load_disk_cache("rsi") or {}
+        scan_signals = {s.get("symbol"): s for s in scan_data.get("signals", [])}
+        
+        items = []
+        for sym, meta in flagged.items():
+            live_item = scan_signals.get(sym, {})
+            daily_rsi = live_item.get("daily_rsi") or meta.get("last_daily_rsi", 50.0)
+            trailing_sl = live_item.get("trailing_sl") or meta.get("trailing_sl", 0.0)
+            cmp = live_item.get("cmp") or meta.get("entry_price", 0.0)
+            
+            # Determine alert state
+            if daily_rsi < 50.0:
+                alert_status = "EXIT_SIGNAL"
+                alert_msg = f"ALERT: Daily RSI dropped to {daily_rsi:.1f} (< 50). Close trade immediately!"
+                alert_badge = "badge-danger"
+            elif daily_rsi <= 52.0:
+                alert_status = "CAUTION"
+                alert_msg = f"CAUTION: Daily RSI is testing 50 support ({daily_rsi:.1f}). Prepare exit if breaks below."
+                alert_badge = "badge-warning"
+            else:
+                alert_status = "HOLD"
+                alert_msg = f"HEALTHY: Daily RSI is {daily_rsi:.1f} (≥ 50). Continue riding trade with trailing SL ₹{trailing_sl:.2f}."
+                alert_badge = "badge-success"
+
+            items.append({
+                "symbol": sym,
+                "company_name": live_item.get("company_name", meta.get("company_name", sym)),
+                "entry_price": meta.get("entry_price", cmp),
+                "cmp": cmp,
+                "monthly_rsi": live_item.get("monthly_rsi", 60.0),
+                "weekly_rsi": live_item.get("weekly_rsi", 60.0),
+                "daily_rsi": daily_rsi,
+                "trailing_sl": trailing_sl,
+                "flagged_at": meta.get("flagged_at", ""),
+                "notes": meta.get("notes", ""),
+                "alert_status": alert_status,
+                "alert_msg": alert_msg,
+                "alert_badge": alert_badge
+            })
+        return jsonify({"status": "success", "count": len(items), "flagged": items})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e), "flagged": []}), 500
 
 @app.route("/api/stock/<symbol>", methods=["GET"])
 def api_stock_chart(symbol):
