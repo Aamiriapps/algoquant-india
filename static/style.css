@@ -1251,27 +1251,514 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* ==========================================================================
+   RESPONSIVE DESIGN & MOBILE OPTIMIZATIONS
+   ========================================================================== */
+
+/* Modern scrollbar styling for horizontal swipe sections */
+.primary-section-nav::-webkit-scrollbar,
+.header-indices::-webkit-scrollbar,
+.strategy-tabs::-webkit-scrollbar,
+.filter-pills::-webkit-scrollbar,
+.portfolio-tabs-list::-webkit-scrollbar,
+.portfolio-subtabs::-webkit-scrollbar {
+    height: 4px;
+}
+
+.primary-section-nav::-webkit-scrollbar-thumb,
+.header-indices::-webkit-scrollbar-thumb,
+.strategy-tabs::-webkit-scrollbar-thumb,
+.filter-pills::-webkit-scrollbar-thumb,
+.portfolio-tabs-list::-webkit-scrollbar-thumb,
+.portfolio-subtabs::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+/* Tablet & Smaller Desktops (<= 1200px) */
+@media (max-width: 1200px) {
     .header-container {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+        padding: 0.85rem 1.25rem;
     }
-    .header-actions {
+
+    .primary-section-nav {
+        order: 3;
         width: 100%;
-        justify-content: space-between;
+        overflow-x: auto;
+        padding: 0.4rem;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
     }
+
+    .nav-section-btn {
+        flex: 1 0 auto;
+        min-width: 160px;
+    }
+
+    .header-indices {
+        margin: 0;
+    }
+}
+
+/* Tablets (<= 992px) */
+@media (max-width: 992px) {
+    .main-container {
+        padding: 1rem;
+    }
+
+    .header-actions {
+        order: 2;
+        margin-left: auto;
+        flex-wrap: wrap;
+    }
+
+    .portfolio-hero-banner {
+        padding: 1.25rem;
+    }
+
+    .p-hero-title {
+        font-size: 1.25rem;
+    }
+
+    .trade-plan-grid {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    }
+
     .filters-row {
-        flex-direction: column;
-        align-items: stretch;
+        gap: 0.75rem;
     }
+
     .search-box {
         min-width: 100%;
     }
+
+    .sort-selector-wrap {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0 !important;
+        margin-top: 0.25rem;
+    }
+
+    .sort-selector-wrap select {
+        flex: 1;
+        max-width: 100%;
+    }
+}
+
+/* Mobile Devices (<= 768px) */
+@media (max-width: 768px) {
+    .app-header {
+        position: sticky;
+        top: 0;
+    }
+
+    .header-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .logo-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .brand-title {
+        font-size: 1.1rem;
+    }
+
+    .brand-subtitle {
+        font-size: 0.72rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .header-indices {
+        width: 100%;
+        justify-content: space-between;
+        overflow-x: auto;
+        padding: 0.2rem 0;
+        margin: 0;
+    }
+
+    .index-pill {
+        flex: 1;
+        justify-content: space-between;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.72rem;
+    }
+
+    .primary-section-nav {
+        order: 2;
+        width: 100%;
+        overflow-x: auto;
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0.4rem;
+        padding: 0.35rem;
+        scrollbar-width: thin;
+    }
+
+    .nav-section-btn {
+        padding: 0.45rem 0.75rem;
+        gap: 0.5rem;
+        flex: 0 0 auto;
+        min-width: 140px;
+    }
+
+    .nav-section-btn i {
+        font-size: 1.1rem;
+    }
+
+    .nav-btn-title {
+        font-size: 0.8rem;
+    }
+
+    .nav-btn-desc {
+        display: none; /* Hide verbose secondary text on mobile to keep nav compact & touch-friendly */
+    }
+
+    .header-actions {
+        order: 4;
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+
+    .header-actions .btn {
+        padding: 0.45rem 0.65rem;
+        font-size: 0.78rem;
+        justify-content: center;
+    }
+
+    #btn-refresh-scan {
+        grid-column: span 2;
+    }
+
+    /* Strategy Banner & KPIs */
+    .strategy-banner {
+        padding: 0.85rem 1rem;
+    }
+
+    .banner-grid {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.65rem;
+    }
+
+    .kpi-card {
+        padding: 0.75rem;
+        gap: 0.6rem;
+    }
+
+    .kpi-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+        border-radius: 8px;
+    }
+
+    .kpi-value {
+        font-size: 1.3rem;
+    }
+
+    .kpi-label {
+        font-size: 0.7rem;
+    }
+
+    .kpi-sub {
+        font-size: 0.65rem;
+    }
+
+    /* Controls & Filter Pills */
+    .controls-panel {
+        padding: 0.85rem;
+        gap: 0.75rem;
+    }
+
+    .strategy-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0.4rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .strategy-tab {
+        padding: 0.45rem 0.85rem;
+        font-size: 0.8rem;
+        flex: 0 0 auto;
+    }
+
+    .filter-pills {
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        display: flex;
+        flex-wrap: nowrap;
+        padding-bottom: 0.35rem;
+        gap: 0.4rem;
+    }
+
+    .pill {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.75rem;
+        flex: 0 0 auto;
+    }
+
+    /* Signal Cards */
+    .signal-card {
+        padding: 1rem 0.85rem;
+        gap: 0.75rem;
+    }
+
+    .card-top-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .card-status-badges {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+
+    .stock-symbol {
+        font-size: 1.1rem;
+    }
+
+    .stock-name {
+        font-size: 0.78rem;
+    }
+
+    .metrics-strip {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem;
+        padding: 0.65rem 0.75rem;
+    }
+
+    .m-item {
+        overflow: hidden;
+    }
+
+    .m-label {
+        font-size: 0.62rem;
+    }
+
+    .m-val {
+        font-size: 0.85rem;
+    }
+
+    .card-analysis-row {
+        padding: 0.5rem 0.65rem;
+        font-size: 0.75rem;
+    }
+
+    .card-actions-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+    }
+
+    .card-extra-pills {
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        font-size: 0.7rem;
+    }
+
+    .card-btn-group {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+
+    .card-btn-group .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.45rem 0.6rem;
+        font-size: 0.75rem;
+    }
+
+    /* Portfolio View Responsiveness */
+    .portfolio-hero-banner {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+        gap: 0.85rem;
+    }
+
+    .p-hero-actions {
+        width: 100%;
+    }
+
+    .p-hero-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .portfolio-manager-bar {
+        padding: 0.75rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .pmb-left {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .portfolio-tabs-list {
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        display: flex;
+        flex-wrap: nowrap;
+        padding-bottom: 0.35rem;
+    }
+
+    .p-tab-pill {
+        flex: 0 0 auto;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.78rem;
+    }
+
+    .pmb-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+
+    .pmb-actions .btn {
+        justify-content: center;
+    }
+
+    .p-metrics-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+        padding: 0.6rem 0.75rem;
+    }
+
+    .p-card-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .p-price-group {
+        text-align: left;
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+    }
+
+    .p-card-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .p-card-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .p-subtab {
+        padding: 0.45rem 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    /* Modals on Mobile */
+    .modal-overlay {
+        padding: 0.5rem;
+    }
+
+    .modal-dialog {
+        max-height: 96vh;
+        border-radius: 12px;
+    }
+
+    .modal-header {
+        padding: 0.85rem 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .chart-stats-bar {
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .chart-canvas-wrapper {
+        height: 260px;
+    }
+
     .form-row {
         grid-template-columns: 1fr;
+        gap: 0.75rem;
     }
+
     .calc-metric-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .legend {
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 0.25rem;
+    }
+}
+
+/* Very Small Mobile Screens (<= 420px) */
+@media (max-width: 420px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .metrics-strip,
+    .p-metrics-row {
+        grid-template-columns: 1fr;
+    }
+
+    .header-actions {
+        grid-template-columns: 1fr;
+    }
+
+    #btn-refresh-scan {
+        grid-column: span 1;
+    }
+
+    .card-btn-group {
+        grid-template-columns: 1fr;
+    }
+
+    .pmb-actions {
         grid-template-columns: 1fr;
     }
 }
