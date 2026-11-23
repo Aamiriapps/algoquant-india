@@ -299,6 +299,14 @@ def analyze_rsi_stock(item: dict) -> dict:
             # User Flagging / Active Tracking
             "is_flagged": is_user_flagged,
             "flagged_trade": user_trade_info,
+            "days_ago": 0,
+            "bars_ago": 0,
+            "pct_from_trigger": 0.0,
+            "trigger_date": "Today (Active Setup)",
+            "volume_ratio": round(curr_vol / 20000.0, 1) if curr_vol else 1.0,
+            "sl_5pct": round(curr_close * 0.95, 2),
+            "trailing_sl": trailing_sl_price,
+            "exit_alert": is_exit_triggered,
             
             # Psychology & Rules Callout
             "psychology_quote": "80% of trading is psychology and 20% is strategy; keeping it simple helps traders remain disciplined and avoid emotional decision-making.",

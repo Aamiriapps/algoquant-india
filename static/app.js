@@ -524,9 +524,10 @@ function renderSignals() {
 // Create a Single Signal Card Component
 function createSignalCard(s) {
     const card = document.createElement('div');
-    const isActionable = s.is_actionable;
-    const isOverextended = s.suitability.includes('OVEREXTENDED') || s.suitability.includes('OVER-DUMPED');
-    const isInvalidated = s.suitability.includes('INVALIDATED') || s.suitability.includes('BREAKDOWN');
+    const isActionable = Boolean(s.is_actionable);
+    const suitabilityStr = String(s.suitability || '');
+    const isOverextended = suitabilityStr.includes('OVEREXTENDED') || suitabilityStr.includes('OVER-DUMPED');
+    const isInvalidated = suitabilityStr.includes('INVALIDATED') || suitabilityStr.includes('BREAKDOWN');
 
     card.className = `signal-card ${isActionable ? 'signal-card-actionable' : (isOverextended ? 'signal-card-overextended' : 'signal-card-invalidated')}`;
     if (s.enhanced_option && s.enhanced_option.vol_confirmed) {
@@ -534,8 +535,9 @@ function createSignalCard(s) {
     }
 
     const isBuy = s.signal_type === 'BUY';
-    const pctChangeColor = s.pct_from_trigger >= 0 ? 'text-green' : 'text-red';
-    const pctChangeSign = s.pct_from_trigger > 0 ? '+' : '';
+    const pctChange = parseFloat(s.pct_from_trigger) || 0.0;
+    const pctChangeColor = pctChange >= 0 ? 'text-green' : 'text-red';
+    const pctChangeSign = pctChange > 0 ? '+' : '';
 
     // Age / Time Badge
     let ageBadge = '';
@@ -545,36 +547,38 @@ function createSignalCard(s) {
         } else if (s.days_ago === 1) {
             ageBadge = '<span class="badge badge-secondary">1 DAY AGO</span>';
         } else {
-            ageBadge = `<span class="badge badge-secondary">${s.days_ago} DAYS AGO</span>`;
+            ageBadge = `<span class="badge badge-secondary">${s.days_ago || 0} DAYS AGO</span>`;
         }
     } else if (state.mode === 'momentum') {
         ageBadge = '<span class="badge badge-success"><span class="pulse-dot"></span> MOMENTUM LEADER</span>';
+    } else if (state.mode === 'rsi') {
+        ageBadge = '<span class="badge badge-success"><span class="pulse-dot"></span> RSI 60-60-50</span>';
     } else {
         // Intraday (Bars / Minutes)
-        if (s.bars_ago <= 1) {
+        if ((s.bars_ago || 0) <= 1) {
             ageBadge = '<span class="badge badge-success"><span class="pulse-dot"></span> LIVE / JUST NOW</span>';
-        } else if (s.bars_ago <= 4) {
-            ageBadge = `<span class="badge badge-secondary">${s.bars_ago * 15} MINS AGO</span>`;
+        } else if ((s.bars_ago || 0) <= 4) {
+            ageBadge = `<span class="badge badge-secondary">${(s.bars_ago || 0) * 15} MINS AGO</span>`;
         } else {
-            ageBadge = `<span class="badge badge-secondary">${s.days_ago}h AGO (${s.bars_ago} bars)</span>`;
+            ageBadge = `<span class="badge badge-secondary">${s.days_ago || 0}h AGO (${s.bars_ago || 0} bars)</span>`;
         }
     }
 
     // Suitability Verdict Badge
     let verdictBadge = '';
     if (isActionable) {
-        verdictBadge = `<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> ${s.suitability}</span>`;
+        verdictBadge = `<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> ${suitabilityStr}</span>`;
     } else if (isOverextended) {
-        verdictBadge = `<span class="badge badge-warning"><i class="fa-solid fa-triangle-exclamation"></i> ${s.suitability}</span>`;
+        verdictBadge = `<span class="badge badge-warning"><i class="fa-solid fa-triangle-exclamation"></i> ${suitabilityStr}</span>`;
     } else if (isInvalidated) {
-        verdictBadge = `<span class="badge badge-danger"><i class="fa-solid fa-ban"></i> ${s.suitability}</span>`;
+        verdictBadge = `<span class="badge badge-danger"><i class="fa-solid fa-ban"></i> ${suitabilityStr}</span>`;
     } else {
-        verdictBadge = `<span class="badge badge-amber"><i class="fa-solid fa-shield"></i> ${s.suitability}</span>`;
+        verdictBadge = `<span class="badge badge-amber"><i class="fa-solid fa-shield"></i> ${suitabilityStr}</span>`;
     }
 
     const proScoreBadge = s.confidence_label ?
         `<span class="badge badge-pro"><i class="fa-solid fa-gauge-high"></i> ${s.confidence_label}</span>` :
-        `<span class="badge badge-pro"><i class="fa-solid fa-crown"></i> PRO SCORE ${s.enhanced_option.pro_score}</span>`;
+        (s.enhanced_option ? `<span class="badge badge-pro"><i class="fa-solid fa-crown"></i> PRO SCORE ${s.enhanced_option.pro_score}</span>` : '');
 
     card.innerHTML = `
         <div class="card-top-row">
@@ -728,13 +732,13 @@ function createSignalCard(s) {
 
         <div class="card-actions-row">
             <div class="card-extra-pills">
-                <span><i class="fa-solid fa-clock"></i> ${state.mode === 'intraday' ? 'Trigger Bar:' : 'Trigger Date:'} <strong>${s.trigger_date}</strong></span>
+                <span><i class="fa-solid fa-clock"></i> ${state.mode === 'intraday' ? 'Trigger Bar:' : 'Trigger Date:'} <strong>${s.trigger_date || 'Active Setup'}</strong></span>
                 <span>&bull;</span>
-                <span>Timeframe: <strong>${s.timeframe}</strong></span>
+                <span>Timeframe: <strong>${s.timeframe || 'Daily'}</strong></span>
                 <span>&bull;</span>
-                <span>RSI: <strong>${s.rsi14}</strong></span>
+                <span>RSI: <strong>${s.rsi14 !== undefined ? s.rsi14 : (s.daily_rsi || '--')}</strong></span>
                 <span>&bull;</span>
-                <span>Vol Ratio: <strong>${s.volume_ratio}x</strong></span>
+                <span>Vol Ratio: <strong>${s.volume_ratio !== undefined ? s.volume_ratio : 1.0}x</strong></span>
                 ${s.adx14 ? `<span>&bull;</span><span>ADX: <strong>${s.adx14}</strong></span>` : ''}
                 ${s.macd_hist !== undefined ? `<span>&bull;</span><span>MACD: <strong>${s.macd_hist > 0 ? '+' : ''}${s.macd_hist}</strong></span>` : ''}
                 ${s.roc20 !== undefined ? `<span>&bull;</span><span>ROC20: <strong>${s.roc20 > 0 ? '+' : ''}${s.roc20}%</strong></span>` : ''}
